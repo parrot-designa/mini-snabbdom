@@ -21,10 +21,29 @@ function appendChild(node, child){
     node.appendChild(child);
 }
 
+function parentNode(node){
+    return node.parentNode;
+}
+
+function insertBefore(
+    parentNode,
+    newNode,
+    referenceNode
+){
+    parentNode.insertBefore(newNode, referenceNode);
+}
+
+function nextSibling(elm){
+    return elm.nextSibling;
+}
+
 export const htmlDomApi = {
     isElement,
     tagName,
     createElement,
     createTextNode,
-    appendChild
+    appendChild,
+    parentNode,
+    insertBefore,
+    nextSibling
 };

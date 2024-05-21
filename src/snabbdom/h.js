@@ -42,15 +42,13 @@ export function h(sel, b, c){
     if(children !== undefined){
         for(i = 0;i < children.length; ++i){
             if(is.primitive(children[i])){
-                children[i] = vnode(
-                    children[i] = vnode(
+                children[i] = vnode( 
                         undefined,
                         undefined,
                         undefined,
                         children[i],
                         undefined
-                    )
-                )
+                ) 
             }
         }
     }

@@ -1,13 +1,18 @@
-import { 
+import {  
   classModule,
   propsModule,
   styleModule,
   eventListenersModule
 } from "snabbdom";
 
-import { h,init } from "./snabbdom";
+import { init,h } from "./snabbdom";
 
-const patch = init();
+const patch = init([
+  classModule,
+  propsModule,
+  styleModule,
+  eventListenersModule
+]);
 
 const container = document.getElementById("container");
 
@@ -50,10 +55,13 @@ const myVnode2 = h('ul',[
   h('li',{key:"D"},"D"), 
 ]) 
 
-patch(container, myVnode);
+const myVnode3 = h("div",['测试'])
+
+console.log("myVnode3==>",myVnode3)
+
+patch(container, myVnode3);
 
 document.getElementById('btn').addEventListener('click',()=>{
-  //疑问 为啥每次点会新增E
-  console.log("myVnode2==>",myVnode,myVnode2)
+  //疑问 为啥每次点会新增E 
   patch(myVnode, myVnode2);
 })
