@@ -6,7 +6,6 @@ import * as is from "./is";
  * @param {*} sel 
  * @param {*} b 
  * @param {*} c 
- * 1. 形态一：
  */ 
 export function h(sel, b, c){
     // 存放属性

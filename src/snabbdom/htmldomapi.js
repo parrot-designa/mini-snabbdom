@@ -37,6 +37,14 @@ function nextSibling(elm){
     return elm.nextSibling;
 }
 
+function setTextContent(node, text) {
+    node.textContent = text;
+}
+  
+function getTextContent(node)  {
+    return node.textContent;
+}
+
 export const htmlDomApi = {
     isElement,
     tagName,
@@ -45,5 +53,7 @@ export const htmlDomApi = {
     appendChild,
     parentNode,
     insertBefore,
-    nextSibling
+    nextSibling,
+    setTextContent,
+    getTextContent
 };

@@ -1,11 +1,11 @@
-import {  
+import {   
   classModule,
   propsModule,
   styleModule,
   eventListenersModule
 } from "snabbdom";
 
-import { init,h } from "./snabbdom";
+import {  init,h } from "./snabbdom";
 
 const patch = init([
   classModule,
@@ -40,28 +40,25 @@ const newVnode = h(
 // 再次调用 `patch`
 // patch(vnode, newVnode); // 将旧节点更新为新节点
 
-const myVnode = h('ul',[
-  h('li',{key:"A"},"A"),
-  h('li',{key:"B"},"B"),
-  h('li',{key:"C"},"C"),
-  h('li',{key:"D"},"D"),
+const myVnode = h('div',[
+  h('p',"A"),
+  h('p',"B"),
+  h('p',"C")
 ])
 
-const myVnode2 = h('ul',[
-  h('li',{key:"E"},"E"),
-  h('li',{key:"A"},"A"),
-  h('li',{key:"B"},"B"),
-  h('li',{key:"C"},"C"),
-  h('li',{key:"D"},"D"), 
-]) 
+const myVnode2 = h('div',[
+  h('p',"A"),
+  h('p',"B"),
+  h('p',"C"),
+  h('p',"D"),
+])
 
-const myVnode3 = h("div",['测试'])
 
-console.log("myVnode3==>",myVnode3)
+const myVnode3 = h("div",'你好') 
 
-patch(container, myVnode3);
+patch(container, myVnode);
 
 document.getElementById('btn').addEventListener('click',()=>{
   //疑问 为啥每次点会新增E 
-  patch(myVnode, myVnode2);
+  patch(myVnode, myVnode3);
 })
