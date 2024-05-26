@@ -6,11 +6,11 @@ module.exports = {
     entry: "./src/index.js",
     devServer:{
         port:8080,
-        static:'www'
+        static:'public'
     },
     plugins:[
         new HtmlWebpackPlugin({
-            template:'www/index.html',//开发环境需要路径
+            template:'public/index.html',//开发环境需要路径
             inject:'body'
         }),
     ]
