@@ -1,18 +1,17 @@
-import {
-  init,
+import {   
   classModule,
   propsModule,
   styleModule,
-  eventListenersModule,
-  h
+  eventListenersModule
 } from "snabbdom";
 
+import {  init,h } from "./snabbdom";
+
 const patch = init([
-  // 通过传入模块初始化 patch 函数
-  classModule, // 开启 classes 功能
-  propsModule, // 支持传入 props
-  styleModule, // 支持内联样式同时支持动画
-  eventListenersModule // 添加事件监听
+  classModule,
+  propsModule,
+  styleModule,
+  eventListenersModule
 ]);
 
 const container = document.getElementById("container");
@@ -23,7 +22,7 @@ const vnode = h("div#container.two.classes", { on: { click: function(){} } }, [
   h("a", { props: { href: "/foo" } }, "I'll take you places!")
 ]);
 // 传入一个空的元素节点 - 将产生副作用（修改该节点）
-patch(container, vnode);
+// patch(container, vnode);
 
 const newVnode = h(
   "div#container.two.classes",
@@ -39,4 +38,27 @@ const newVnode = h(
   ]
 );
 // 再次调用 `patch`
-patch(vnode, newVnode); // 将旧节点更新为新节点
+// patch(vnode, newVnode); // 将旧节点更新为新节点
+
+const myVnode = h('div',[
+  h('p',"A"),
+  h('p',"B"),
+  h('p',"C")
+])
+
+const myVnode2 = h('div',[
+  h('p',"A"),
+  h('p',"B"),
+  h('p',"C"),
+  h('p',"D"),
+])
+
+
+const myVnode3 = h("div",'你好') 
+
+patch(container, myVnode);
+
+document.getElementById('btn').addEventListener('click',()=>{
+  //疑问 为啥每次点会新增E 
+  patch(myVnode, myVnode3);
+})
