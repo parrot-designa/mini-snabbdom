@@ -184,3 +184,146 @@ document.getElementById('btn').addEventListener('click',()=>{
     由之前的diff算法可知，当点击更新以后，界面上会复用前两个元素苹果和香蕉(即没有销毁以及重新创建)，那么如何证明它复用了呢，其实很简单，只需要在浏览器中手动更改前2个元素，如果点击更新以后，更改的前2个元素没有变化，即可证明它并对dom节点进行了复用。
 
     如上代码所示，patch即为vue中的第一次渲染，点击按钮更新新的vnode相当于vue中的更新渲染，只不过vue中将行为进行了一些封装。所以掌握snabbdom即可掌握vue2的核心双端diff算法。
+
+
+# 二、生成虚拟DOM的方法h
+
+    我们这里不讨论DOM如何变成虚拟DOM 这属于模板编译原理范畴 但是虚拟节点变成DOM节点我们这节会说到。
+
+## 1. runtime-only模式
+
+    在Vue中，通常我们会采取Runtime-Only模式运行Vue项目，在这个模式中，我们在构建阶段所有的模版（<template>标签中的HTML）已经被预编译成Javascript渲染函数（render函数），预编译过程通常由如vue-loader配合vue-template-compiler这样的工具在Webpack构建过程中完成，它们会把.vue文件中的模板转换为高效的JavaScript代码。
+
+![alt text](image-6.png)
+
+    这里为什么不是render而是staticRenderFns呢？staticRenderFns 是 Vue 中的一个概念，与 Vue 的渲染机制相关。在 Vue 的模板编译过程中，对于某些静态的、不依赖于数据变化的 DOM 结构，Vue 会将其提取出来，生成对应的渲染函数并放在 staticRenderFns 数组里。这样做是为了优化渲染性能，因为静态内容在初次渲染后不需要随着数据变化而更新，可以避免不必要的重新渲染。
+
+## 2. vnode.js
+
+        在snabbdom中，vnode.js模块主要用于创建vnode。下面的函数主要有三个功能：1.创建Vnode 2.描述虚拟DOM结构 3.diff算法的基础
+
+```js
+//src/vnode.js
+export function vnode(
+    sel,
+    data,
+    children,
+    text,
+    elm
+){
+    const key = data === undefined ? undefined : data.key;
+    return { sel, data, children, text, elm, key };
+}
+```
+
+    由上面的代码可以看出虚拟节点vnode的属性有哪些：
+
+```js
+{
+    children: undefined,// 子节点
+    data: {},// 属性、样式、key
+    elm: undefined, // 对应的真正的dom节点(对象)，undefined表示节点还没有上dom树
+    key:undefined, // vnode唯一标识
+    sel:"div", // 选择器
+    text: "hello" // 文本内容
+}
+```
+
+
+## 2. h函数
+
+    上节我们知道，在vue中是通过模版编译将html编译成为一个render函数，其实这个render函数运行的返回值就是虚拟DOM。我们可以看到vue中采用的是vm._c来实现生成虚拟DOM，而在snabbdom中是使用h函数来生成虚拟DOM的。
+
+
+### 2.1 h函数使用
+
+比如这样调用h函数：
+```js
+h('a', 
+    {
+        props:{
+            href:'http://www.baidu.com'
+        }
+    }, 
+    "百度一下"
+);
+```
+将得到这样的虚拟节点：
+```js
+{
+    "sel": "a",
+    "data": {
+        "props": {
+            "href": "http://www.baidu.com"
+        }
+    },
+    "text": "百度一下"
+}
+```
+它表示真正的DOM节点
+```html
+<a href="http://www.baidu.com">百度一下</a>
+```
+
+### 2.2 h函数源码
+
+```js
+export function h(sel, b, c){
+    // 存放属性
+    let data = {};
+    // 存放子节点
+    let children ;
+    let text;
+    let i;
+
+    if(c !== undefined){
+        if(b !== null){
+            data = b;
+        }
+        if(is.array(c)){
+            children = c;
+        } else if(is.primitive(c)){
+            text = c.toString();
+        } else if( c && c.sel){
+            children = [c];
+        }
+    }else if(b !== undefined && b !== null){
+        if(is.array(b)){
+            children = b;
+        }else if(is.primitive(b)){
+            text = b.toString();
+        }else if(b && b.sel){
+            children = [b];
+        }else {
+            data = b;
+        }
+    }
+
+    if(children !== undefined){
+        for(i = 0;i < children.length; ++i){
+            if(is.primitive(children[i])){
+                children[i] = vnode( 
+                        undefined,
+                        undefined,
+                        undefined,
+                        children[i],
+                        undefined
+                ) 
+            }
+        }
+    }
+    return vnode(sel,data,children,text,undefined);
+}
+```
+
+    h函数其实也没有什么好讲的，可以看到这个函数最后返回了一个vnode方法的返回值，可以知道h函数就是调用vnode对传入的属性进行整合，最后返回vnode，至于其中的一大堆逻辑，其实就是对第二个参数和第三个参数进行数据的兼容，比如：
+
+```js
+h('div',undefined,['hello']) 
+===
+h('div',['hello'])
+```
+
+    上面这2个vnode是完全相等的。这里hello是要放到子节点里面的，即vnode的children属性中，但是我们这里将hello放进了第二个参数，所以函数需要判断用户真实的意图，这里的逻辑是判断第二个参数如果是数组即将其变成children属性，
+
+    这里需要注意的是这个函数最后会循环遍历children，如果children中存在原始类型如文本，他会将其转化为一个文本vnode。

@@ -19,6 +19,9 @@ const myVnode2 = h('div',[
     h('p','桃子'),
 ])
 
+const myVnode3 = h('a', {props:{href:'http://www.baidu.com'}}, "百度一下");
+
+console.log(myVnode3)
 
 patch(container, myVnode);
 
