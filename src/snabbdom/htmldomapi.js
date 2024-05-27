@@ -1,5 +1,16 @@
+function createElement(
+    tagName,
+    options
+){
+    return document.createElement(tagName,options);
+}
+
 function isElement(node){
     return node.nodeType === 1;
+}
+
+function isDocumentFragment(node) {
+    return node.nodeType === 11;
 }
 
 function tagName(elm){
@@ -15,6 +26,10 @@ function createElement(
 
 function createTextNode(text){
     return document.createTextNode(text);
+}
+
+function createComment(text) {
+    return document.createComment(text);
 }
 
 function appendChild(node, child){
@@ -55,5 +70,7 @@ export const htmlDomApi = {
     insertBefore,
     nextSibling,
     setTextContent,
-    getTextContent
+    getTextContent,
+    createComment,
+    isDocumentFragment
 };

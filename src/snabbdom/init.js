@@ -16,13 +16,9 @@ function sameVnode(vnode1, vnode2){
     return isSameKey && isSameSel;
 }
 
-export function init(
-    modules,
-    domApi,
-    options
-){
+export function init(){
 
-    const api = domApi !== undefined ? domApi : htmlDomApi;
+    const api = htmlDomApi;
 
     function emptyNodeAt(elm){
         const id = elm.id ? "#" + elm.id : "";

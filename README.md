@@ -3,7 +3,7 @@ Vue2源码揭秘 - 虚拟DOM和diff算法
 # 一、介绍
 
 
-## 1.diff算法
+## 1、diff算法
 
     Diff算法是一种在编程中，尤其是在前端开发领域用于比较两个数据结构（常见的是DOM树或虚拟DOM树）差异的高效算法。其目的是高效地识别出从一个状态到另一个状态所需的最小变更集。因为在浏览器中操作DOM性能消耗比较昂贵，比如节点的添加、删除、移动等，所以diff算法可以尽可能的减少DOM的操作量，进而减少浏览器的性能负担。 
 
@@ -86,7 +86,7 @@ Vue2源码揭秘 - 虚拟DOM和diff算法
       children:[
         {
           tag:undefined,
-          text:"苹果"
+          text:"香蕉"
         }
       ]
     },
@@ -96,7 +96,7 @@ Vue2源码揭秘 - 虚拟DOM和diff算法
       children:[
         {
           tag:undefined,
-          text:"苹果"
+          text:"火龙果"
         }
       ]
     }
@@ -133,7 +133,7 @@ Vue.patch(document.body, patches);
     在这个例子中，Vue首次渲染组件时生成了一个虚拟DOM节点（oldVnode）。当组件的数据更新时，Vue再次渲染组件，生成了一个新的虚拟DOM节点（newVnode）。Vue的diff算法会比较这两个虚拟节点，找出需要执行的最小DOM操作（patches），最后这些DOM操作会被应用到实际的DOM上，以此来更新视图。
 
 
-## 4.snabbdom简介
+## 4、snabbdom简介
 
     Snabbdom是瑞典语单词，原意为”速度“。是一个轻量级的虚拟DOM和DOM diff算法库，它被设计用于以非常高效的方式更新真实DOM。Vue.js在2.x版本中采用了虚拟DOM的概念来提高其性能和效率，而Vue 2.x内部使用的虚拟DOM实现实际上是在Snabbdom的基础上进行了一些定制和改造的。
 
@@ -188,9 +188,9 @@ document.getElementById('btn').addEventListener('click',()=>{
 
 # 二、生成虚拟DOM的方法h
 
-    我们这里不讨论DOM如何变成虚拟DOM 这属于模板编译原理范畴 但是虚拟节点变成DOM节点我们这节会说到。
+    我们这里不讨论DOM如何变成虚拟DOM 这属于模板编译原理范畴 但是虚拟节点变成DOM节点我们这篇会说到。
 
-## 1. runtime-only模式
+## 1、Vue的runtime-only模式
 
     在Vue中，通常我们会采取Runtime-Only模式运行Vue项目，在这个模式中，我们在构建阶段所有的模版（<template>标签中的HTML）已经被预编译成Javascript渲染函数（render函数），预编译过程通常由如vue-loader配合vue-template-compiler这样的工具在Webpack构建过程中完成，它们会把.vue文件中的模板转换为高效的JavaScript代码。
 
@@ -198,7 +198,7 @@ document.getElementById('btn').addEventListener('click',()=>{
 
     这里为什么不是render而是staticRenderFns呢？staticRenderFns 是 Vue 中的一个概念，与 Vue 的渲染机制相关。在 Vue 的模板编译过程中，对于某些静态的、不依赖于数据变化的 DOM 结构，Vue 会将其提取出来，生成对应的渲染函数并放在 staticRenderFns 数组里。这样做是为了优化渲染性能，因为静态内容在初次渲染后不需要随着数据变化而更新，可以避免不必要的重新渲染。
 
-## 2. vnode.js
+## 2、vnode.js
 
         在snabbdom中，vnode.js模块主要用于创建vnode。下面的函数主要有三个功能：1.创建Vnode 2.描述虚拟DOM结构 3.diff算法的基础
 
@@ -230,12 +230,12 @@ export function vnode(
 ```
 
 
-## 2. h函数
+## 3、h函数
 
     上节我们知道，在vue中是通过模版编译将html编译成为一个render函数，其实这个render函数运行的返回值就是虚拟DOM。我们可以看到vue中采用的是vm._c来实现生成虚拟DOM，而在snabbdom中是使用h函数来生成虚拟DOM的。
 
 
-### 2.1 h函数使用
+### 3.1 h函数使用
 
 比如这样调用h函数：
 ```js
@@ -265,7 +265,7 @@ h('a',
 <a href="http://www.baidu.com">百度一下</a>
 ```
 
-### 2.2 h函数源码
+### 3.2 h函数源码
 
 ```js
 export function h(sel, b, c){
@@ -327,3 +327,54 @@ h('div',['hello'])
     上面这2个vnode是完全相等的。这里hello是要放到子节点里面的，即vnode的children属性中，但是我们这里将hello放进了第二个参数，所以函数需要判断用户真实的意图，这里的逻辑是判断第二个参数如果是数组即将其变成children属性，
 
     这里需要注意的是这个函数最后会循环遍历children，如果children中存在原始类型如文本，他会将其转化为一个文本vnode。
+
+# 三、首次挂载
+
+    初始化渲染时，不用进行diff判断，直接将整个虚拟DOM挂载到容器上。
+
+## 1、前置知识-DOM相关操作
+
+### 1.1 isElement
+
+    该函数判断传入的参数node是否是一个元素节点。在DOM（文档对象模型）中，节点类型由nodeType属性来表示，其中nodeType的值为1表示元素节点（Element Node）。 
+
+```js
+function isElement(node){
+    return node.nodeType === 1;
+}
+```
+
+### 1.2 createElement
+
+    该函数封装了原生document.createElement方法，创建并返回元素。它接受两个参数：tagName和options。
+    1. tagName: 字符串类型，指定了要创建的元素类型，比如div、span、img
+    2. options: 可选对象，这是一个在某些现代浏览器和 JavaScript 环境中支持的参数，用于指定新创建元素的属性和其他配置。例如，你可以用它来设置元素的 is 属性（定义自定义元素）或者指定元素的 namespaceURI（命名空间）。这个参数是 HTML5 和后来的规范引入的，不是所有环境都支持。
+
+```js
+function createElement(
+    tagName,
+    options
+){
+    return document.createElement(tagName,options);
+}
+```
+
+### 1.3 createTextNode
+
+    该函数的作用是创建一个新的文本节点（text node）,其中包含指定的文本内容。
+
+```js
+function createTextNode(text){
+    return document.createTextNode(text);
+}
+```
+
+### 1.4 createComment
+
+    该函数的作用是创建一个注释节点封装着指定的text内容。    
+
+```js
+function createComment(text) {
+    return document.createComment(text);
+}
+```
