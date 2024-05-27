@@ -378,3 +378,13 @@ function createComment(text) {
     return document.createComment(text);
 }
 ```
+
+### 1.5 isDocumentFragment
+
+    该函数的作用是检查一个节点是否是文档片段。
+
+```js
+function isDocumentFragment(node) {
+    return node.nodeType === 11;
+}
+````
