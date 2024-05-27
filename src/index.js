@@ -1,7 +1,7 @@
 import {
   init,
   h
-} from "snabbdom";
+} from "../src/snabbdom";
 
 const patch = init([]);
 
@@ -21,7 +21,7 @@ const myVnode2 = h('div',[
 
 const myVnode3 = h('a', {props:{href:'http://www.baidu.com'}}, "百度一下");
 
-console.log(myVnode3)
+ 
 
 patch(container, myVnode);
 

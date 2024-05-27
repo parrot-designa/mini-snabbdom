@@ -17,12 +17,7 @@ function tagName(elm){
     return elm.tagName;
 }
 
-function createElement(
-    tagName,
-    options
-){
-    return document.createElement(tagName, options);
-}
+ 
 
 function createTextNode(text){
     return document.createTextNode(text);

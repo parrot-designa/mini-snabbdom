@@ -387,4 +387,166 @@ function createComment(text) {
 function isDocumentFragment(node) {
     return node.nodeType === 11;
 }
-````
+```
+
+### 1.6 appendChild
+
+    该函数的作用是将一个子节点添加到指定的父节点中。函数的执行过程就是把child这个子元素添加到node这个父元素的子元素列表的末尾。
+
+```js
+function appendChild(node, child){
+    node.appendChild(child);
+}
+```
+
+### 1.7 tagName
+
+    该函数的作用是获取传入元素（element）的标签名（tag name）
+    需要注意的是这里的返回值是大写，如果使用需要搭配toLowerCase()
+
+```js
+function tagName(elm){
+  return elm.tagName;
+}
+```
+
+### 1.8 parentNode
+
+    该函数的作用是获取传入元素的父节点。
+
+```js
+function parentNode(node){
+    return node.parentNode;
+}
+```
+
+### 1.9 insertBefore
+
+    该函数的作用是在指定的参考节点前面插入一个新的节点。
+
+```js
+function insertBefore(
+    parentNode,
+    newNode,
+    referenceNode
+){
+    parentNode.insertBefore(newNode, referenceNode);
+}
+```
+
+### 1.10 nextSibling
+
+    该函数的作用是返回传入的元素elm的下一个兄弟节点
+
+```js
+function nextSibling(elm){
+    return elm.nextSibling;
+}
+```
+
+## 2. 第一步判断是不是真实节点
+
+首先判断旧节点是不是真实DOM节点，如果是真实DOM节点将其通过emptyNodeAt转化为一个虚拟节点。
+
+```js
+// 一个将dom节点转化为虚拟节点的函数
+function emptyNodeAt(elm){
+        const id = elm.id ? "#" + elm.id : "";
+        return vnode(
+            api.tagName(elm).toLowerCase() + id,
+            {},
+            [],
+            undefined,
+            elm
+        );
+}
+function patch(
+    oldVnode,
+    newVnode
+){
+    // 首先判断oldVnode是不是虚拟节点（这里的api就是dom一些方法的集合）
+    if(isElement(api,oldVnode)){
+        // 传入的第一个参数是DOM节点 ，此时要包装为虚拟节点
+        oldVnode = emptyNodeAt(oldVnode);
+    }
+}
+```
+
+## 3. 第三步判断oldVnode和newVnode是不是同一个虚拟节点
+
+在初始化时，第一次我们执行patch时oldVnode实际上是“挂载的容器”，然后会执行emptyNodeAt将oldVnode转化为一个虚拟节点。
+
+```js
+// 判断是否是同一个虚拟节点
+if(sameVnode(oldVnode, vnode)){
+    console.log("是同一个节点，进行精细化比较")         
+}else{
+    console.log("不是同一个节点，暴力插入新的，删除旧的");
+    // 获取旧虚拟节点的真实节点
+    elm = oldVnode.elm;
+    // 因为我们这里暴力插入新的节点，删除旧的节点，这里旧的节点实际上指的就是这个容器，而插入节点需要调用insertBefore，所以需要获取旧节点的父元素 方便后续调用
+    parent = api.parentNode(elm);
+    // 在虚拟节点上创建真实节点的方法
+    createElm(vnode);
+
+    if(parent !== null){
+        api.insertBefore(parent, vnode.elm, api.nextSibling(elm));
+        }
+    }
+```
+
+### 3.1 sameVnode
+
+    在源码中，是这么定义同一个节点的：
+    1. 旧节点的key要和新节点的key相同
+    2. 旧节点的选择器要和新节点的选择器相同
+    （实际上不止这些判断 但是核心就是使用这2个属性进行判断）
+
+```js
+function sameVnode(vnode1, vnode2){
+    const isSameKey = vnode1.key === vnode2.key;
+    const isSameSel = vnode1.sel === vnode2.sel;
+
+    return isSameKey && isSameSel;
+}
+```
+
+    当判断为同一个几点之后，就要进行精细化比较了。这部分内容比较复杂，我们放到后面再说。
+
+### 3.2 createElm
+
+```js
+function createElm(vnode){
+        let  sel = vnode.sel;
+        const data = vnode.data;
+        const elm = api.createElement(sel, data);
+        const children = vnode.children;
+
+        // 非文本节点
+        if(sel !== undefined){
+            vnode.elm = elm;
+            // 如果节点是文本节点 （没有子节点）=> h('div','文本')
+            if(is.primitive(vnode.text) && (!is.array(children) || children.length === 0)){
+                api.appendChild(elm, api.createTextNode(vnode.text));
+            }
+            if(is.array(children)){
+                for(let i = 0;i < children.length; ++i ){
+                    const ch = children[i];
+                    if(ch != null){
+                        api.appendChild(elm, createElm(ch));
+                    }
+                }
+            } 
+        }else{
+            // 文本节点
+            vnode.elm = api.createTextNode(vnode.text);
+        }
+        
+        return vnode.elm;
+}
+```
+1. 获取新节点的sel、data以及children，然后基于这个sel、data通过createElement方法创建了一个dom节点指向elm变量。 
+2. 判断是否是文本节点，因为文本节点没有sel属性，如果是文本节点，则直接基于text属性创建一个文本节点并直接赋值给vnode.elm。
+3. 如果sel不为空，即不是一个纯文本节点，进入判断。首先将刚开始创建的elm指向vnode.elm，然后查看vnode.text有值并且children是空的，说明内部这是一个没有子节点的文字节点，这个时候可以直接将文本节点添加到elm上。
+4. 如果这个子节点是数组，则表示这个vnode存在子节点，而这些子节点的每一项又是一个虚拟节点，然后调用appendChild不断添加子节点到父节点上。
+5. createElm的返回值是一个真实DOM节点，方便递归调用。
