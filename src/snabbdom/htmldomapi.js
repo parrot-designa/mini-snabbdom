@@ -17,7 +17,9 @@ function tagName(elm){
     return elm.tagName;
 }
 
- 
+function removeChild(node, child) {
+    node.removeChild(child);
+}
 
 function createTextNode(text){
     return document.createTextNode(text);
@@ -67,5 +69,6 @@ export const htmlDomApi = {
     setTextContent,
     getTextContent,
     createComment,
-    isDocumentFragment
+    isDocumentFragment,
+    removeChild
 };

@@ -31,6 +31,37 @@ export function init(){
         );
     }
 
+    function addVnodes(
+        parentElm,
+        before,
+        vnodes,
+        startIdx,
+        endIdx
+    ){
+        for (; startIdx <= endIdx; ++startIdx) {
+            const ch = vnodes[startIdx];
+            if (ch != null) {
+                //没有before将插入父节点的子节点列表的末尾，这相当于appendChild方法的效果
+                api.insertBefore(parentElm, createElm(ch), before);
+            }
+        }
+    }
+
+    function removeVnodes(
+        parentElm,
+        vnodes,
+        startIdx,
+        endIdx
+    ){  
+        for(;startIdx <= endIdx;startIdx++) {
+            const ch = vnodes[startIdx];
+            //对于每个虚拟节点，首先检查它是否非空
+            if (ch != null) { 
+                api.removeChild(parentElm, ch.elm);  
+            }
+        }
+    }
+
     function createElm(vnode){
         let  sel = vnode.sel;
         const data = vnode.data;
@@ -64,14 +95,35 @@ export function init(){
         oldVnode,
         vnode
     ){
+        const elm = vnode.elm = oldVnode.elm;
         // 如果在内存中是同一个对象 则什么都不做
         if(oldVnode === vnode) return;  
-        const elm = vnode.elm = oldVnode.elm;
+        
+        const oldCh = oldVnode.children;
+        const ch = vnode.children;
+ 
+        // 新节点有子节点的情况
         if(vnode.text === undefined){
-
+            // 新旧节点都有子节点，需要逐层比较
+            if (oldCh !== undefined && ch !== undefined) { 
+            // 新节点有子节点 旧节点没有子节点
+            }else if(ch !== undefined){
+                // 如果旧节点存在文本 清除
+                if (oldVnode.text !== undefined) api.setTextContent(elm, "");
+                addVnodes(elm, null, ch, 0, ch.length - 1);
+            // 新节点没有子节点 旧节点有子节点
+            }else if(oldCh !== undefined){
+                console.log("暂时未知")
+            }else if(oldVnode.text !== undefined){
+                api.setTextContent(elm, "");
+            }
+        // 新节点存在text表示是文本节点
         }else if(oldVnode.text !== vnode.text){
-            //新vnode存在text属性
-            console.log("新vnode存在text属性")
+            // 旧节点存在子节点 需要先移除子节点
+            if(oldCh !== undefined){
+                removeVnodes(elm,oldCh,0,oldCh.length-1);
+            }
+            // 如果旧节点不存在子节点 直接更新即可
             api.setTextContent(elm, vnode.text);
         }
     }

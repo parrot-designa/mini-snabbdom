@@ -545,8 +545,23 @@ function createElm(vnode){
         return vnode.elm;
 }
 ```
-1. 获取新节点的sel、data以及children，然后基于这个sel、data通过createElement方法创建了一个dom节点指向elm变量。 
-2. 判断是否是文本节点，因为文本节点没有sel属性，如果是文本节点，则直接基于text属性创建一个文本节点并直接赋值给vnode.elm。
-3. 如果sel不为空，即不是一个纯文本节点，进入判断。首先将刚开始创建的elm指向vnode.elm，然后查看vnode.text有值并且children是空的，说明内部这是一个没有子节点的文字节点，这个时候可以直接将文本节点添加到elm上。
-4. 如果这个子节点是数组，则表示这个vnode存在子节点，而这些子节点的每一项又是一个虚拟节点，然后调用appendChild不断添加子节点到父节点上。
-5. createElm的返回值是一个真实DOM节点，方便递归调用。
+1. ```初始化变量```:从vnode对象中获取选择器（sel）、数据属性（data）、子节点（children）以及文本内容（text）。
+2. ```创建DOM元素```:当sel存在，即非文本节点时，使用api.createElement()方法根据选择器和数据属性创建一个DOM元素，并将其赋值给elm。 
+3. ```处理文本内容```: 检查vnode.text是否为原始类型（如字符串），并且无子节点或子节点数组为空，此时将文本通过api.createTextNode()转换为文本节点，并追加到刚创建的元素中。
+4. ```递归处理子节点```:如果children是一个数组，函数会遍历每个子节点，对每个子节点递归调用createElm()函数以生成其对应的DOM结构，然后将这些子DOM元素追加到父元素中，实现嵌套结构的构建。
+5. ```处理纯文本节点```:如果sel未定义，表明这是一个纯文本节点，直接使用api.createTextNode()创建文本节点，并将其赋值给vnode.elm。
+
+## 4、流程图
+
+### 1.初次渲染流程图
+
+![alt text](image-7.png)
+
+### 2.createElm流程图
+
+![alt text](image-8.png)
+
+
+# 四、更新渲染
+
+    上节中，我们学到了如何实现初始化渲染，即将vnode直接挂在到容器上。但是我们没有说更新是啥流程，这一节我们就会实现更新渲染这部分功能。
