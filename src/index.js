@@ -10,13 +10,13 @@ const patch = init([]);
 const container = document.getElementById("container");
 
 const myVnode = h('div',[
-    h('p',{key:'A'},'香蕉'),
-    h('p',{key:'B'},'苹果')
+    h('p','香蕉'),
+    h('p','苹果')
 ]);
 
 const myVnode2 = h('div',[
-    h('p',{key:'B'},'苹果'),
-    h('p',{key:'A'},'香蕉')
+    h('p','苹果'),
+    h('p','香蕉')
 ]);
 
 const myVnode3 = h('div',"aaa")
