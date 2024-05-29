@@ -12,7 +12,7 @@ function isElement(
 function sameVnode(vnode1, vnode2){
     const isSameKey = vnode1.key === vnode2.key;
     const isSameSel = vnode1.sel === vnode2.sel;
-
+    
     return isSameKey && isSameSel;
 }
 
@@ -106,6 +106,7 @@ export function init(){
         if(vnode.text === undefined){
             // 新旧节点都有子节点，需要逐层比较
             if (oldCh !== undefined && ch !== undefined) { 
+                console.log("新旧节点都有子节点，需要逐层比较",oldCh,ch)
             // 新节点有子节点 旧节点没有子节点
             }else if(ch !== undefined){
                 // 如果旧节点存在文本 清除
