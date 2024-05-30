@@ -1,7 +1,7 @@
 import {
   init,
   h
-} from "snabbdom";
+} from "../src/snabbdom";
 
 //../src/
 
@@ -9,15 +9,9 @@ const patch = init([]);
 
 const container = document.getElementById("container");
 
-const myVnode = h('div',[
-    h('p','香蕉'),
-    h('p','苹果')
-]);
+const myVnode = h('div','苹果');
 
-const myVnode2 = h('div',[
-    h('p','苹果'),
-    h('p','香蕉')
-]);
+const myVnode2 = h('div');
 
 const myVnode3 = h('div',"aaa")
 

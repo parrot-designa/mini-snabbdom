@@ -228,21 +228,21 @@ document.getElementById('btn').addEventListener('click',()=>{
 如上代码所示，patch即为vue中的第一次渲染，点击按钮更新新的vnode相当于vue中的更新渲染，只不过vue中将行为进行了一些封装。所以掌握snabbdom即可掌握vue2的核心双端diff算法。
 
 
-# 二、生成虚拟DOM的方法h
+# 2、生成虚拟DOM的方法h
 
-    我们这里不讨论DOM如何变成虚拟DOM 这属于模板编译原理范畴 但是虚拟节点变成DOM节点我们这篇会说到。
+我们这里不讨论DOM如何变成虚拟DOM 这属于模板编译原理范畴 但是虚拟节点变成DOM节点我们这篇会说到。
 
-## 1、Vue的runtime-only模式
+## 2.1 Vue的runtime-only模式
 
-    在Vue中，通常我们会采取Runtime-Only模式运行Vue项目，在这个模式中，我们在构建阶段所有的模版（<template>标签中的HTML）已经被预编译成Javascript渲染函数（render函数），预编译过程通常由如vue-loader配合vue-template-compiler这样的工具在Webpack构建过程中完成，它们会把.vue文件中的模板转换为高效的JavaScript代码。
+在Vue中，通常我们会采取Runtime-Only模式运行Vue项目，在这个模式中，我们在构建阶段所有的模版```(<template>标签中的HTML)```已经被预编译成Javascript渲染函数（render函数），预编译过程通常由如vue-loader配合vue-template-compiler这样的工具在Webpack构建过程中完成，它们会把.vue文件中的模板转换为高效的JavaScript代码。
 
 ![alt text](image-6.png)
 
     这里为什么不是render而是staticRenderFns呢？staticRenderFns 是 Vue 中的一个概念，与 Vue 的渲染机制相关。在 Vue 的模板编译过程中，对于某些静态的、不依赖于数据变化的 DOM 结构，Vue 会将其提取出来，生成对应的渲染函数并放在 staticRenderFns 数组里。这样做是为了优化渲染性能，因为静态内容在初次渲染后不需要随着数据变化而更新，可以避免不必要的重新渲染。
 
-## 2、vnode.js
+## 2.2 vnode.js
 
-        在snabbdom中，vnode.js模块主要用于创建vnode。下面的函数主要有三个功能：1.创建Vnode 2.描述虚拟DOM结构 3.diff算法的基础
+在snabbdom中，vnode.js模块主要用于创建vnode。下面的函数主要有三个功能：```1.创建Vnode 2.描述虚拟DOM结构 3.diff算法的基础```
 
 ```js
 //src/vnode.js
@@ -272,12 +272,12 @@ export function vnode(
 ```
 
 
-## 3、h函数
+## 2.3 h函数
 
-    上节我们知道，在vue中是通过模版编译将html编译成为一个render函数，其实这个render函数运行的返回值就是虚拟DOM。我们可以看到vue中采用的是vm._c来实现生成虚拟DOM，而在snabbdom中是使用h函数来生成虚拟DOM的。
+上节我们知道，在vue中是通过模版编译将html编译成为一个render函数，其实这个render函数运行的返回值就是虚拟DOM。我们可以看到vue中采用的是vm._c来实现生成虚拟DOM，而在snabbdom中是使用h函数来生成虚拟DOM的。
 
 
-### 3.1 h函数使用
+### 2.3.1 h函数使用
 
 比如这样调用h函数：
 ```js
@@ -307,7 +307,7 @@ h('a',
 <a href="http://www.baidu.com">百度一下</a>
 ```
 
-### 3.2 h函数源码
+### 2.3.2 h函数源码
 
 ```js
 export function h(sel, b, c){
@@ -358,7 +358,7 @@ export function h(sel, b, c){
 }
 ```
 
-    h函数其实也没有什么好讲的，可以看到这个函数最后返回了一个vnode方法的返回值，可以知道h函数就是调用vnode对传入的属性进行整合，最后返回vnode，至于其中的一大堆逻辑，其实就是对第二个参数和第三个参数进行数据的兼容，比如：
+h函数其实也没有什么好讲的，可以看到这个函数最后返回了一个vnode方法的返回值，可以知道h函数就是调用vnode对传入的属性进行整合，最后返回vnode，至于其中的一大堆逻辑，其实就是对第二个参数和第三个参数进行数据的兼容，比如：
 
 ```js
 h('div',undefined,['hello']) 
@@ -366,19 +366,19 @@ h('div',undefined,['hello'])
 h('div',['hello'])
 ```
 
-    上面这2个vnode是完全相等的。这里hello是要放到子节点里面的，即vnode的children属性中，但是我们这里将hello放进了第二个参数，所以函数需要判断用户真实的意图，这里的逻辑是判断第二个参数如果是数组即将其变成children属性，
+上面这2个vnode是完全相等的。这里hello是要放到子节点里面的，即vnode的children属性中，但是我们这里将hello放进了第二个参数，所以函数需要判断用户真实的意图，这里的逻辑是判断第二个参数如果是数组即将其变成children属性，
 
-    这里需要注意的是这个函数最后会循环遍历children，如果children中存在原始类型如文本，他会将其转化为一个文本vnode。
+这里需要注意的是这个函数最后会循环遍历children，如果children中存在原始类型如文本，他会将其转化为一个文本vnode。
 
-# 三、首次挂载
+# 3、首次挂载
 
     初始化渲染时，不用进行diff判断，直接将整个虚拟DOM挂载到容器上。
 
-## 1、前置知识-DOM相关操作
+## 3.1 前置知识-DOM相关操作
 
-### 1.1 isElement
+### 3.1.1 isElement
 
-    该函数判断传入的参数node是否是一个元素节点。在DOM（文档对象模型）中，节点类型由nodeType属性来表示，其中nodeType的值为1表示元素节点（Element Node）。 
+该函数判断传入的参数node是否是一个元素节点。在DOM（文档对象模型）中，节点类型由nodeType属性来表示，其中nodeType的值为1表示元素节点（Element Node）。如```div```、```span``` 等。
 
 ```js
 function isElement(node){
@@ -386,11 +386,12 @@ function isElement(node){
 }
 ```
 
-### 1.2 createElement
+### 3.1.2 createElement
 
-    该函数封装了原生document.createElement方法，创建并返回元素。它接受两个参数：tagName和options。
-    1. tagName: 字符串类型，指定了要创建的元素类型，比如div、span、img
-    2. options: 可选对象，这是一个在某些现代浏览器和 JavaScript 环境中支持的参数，用于指定新创建元素的属性和其他配置。例如，你可以用它来设置元素的 is 属性（定义自定义元素）或者指定元素的 namespaceURI（命名空间）。这个参数是 HTML5 和后来的规范引入的，不是所有环境都支持。
+该函数封装了原生document.createElement方法，创建并返回元素。它接受两个参数：tagName和options。
+
+1. tagName: 字符串类型，指定了要创建的元素类型，比如div、span、img
+2. options: 可选对象，这是一个在某些现代浏览器和 JavaScript 环境中支持的参数，用于指定新创建元素的属性和其他配置。例如，你可以用它来设置元素的 is 属性（定义自定义元素）或者指定元素的 namespaceURI（命名空间）。这个参数是 HTML5 和后来的规范引入的，不是所有环境都支持。
 
 ```js
 function createElement(
@@ -401,39 +402,19 @@ function createElement(
 }
 ```
 
-### 1.3 createTextNode
+### 3.1.3 createTextNode
 
-    该函数的作用是创建一个新的文本节点（text node）,其中包含指定的文本内容。
+该函数的作用是创建一个新的文本节点（text node）,其中包含指定的文本内容。
 
 ```js
 function createTextNode(text){
     return document.createTextNode(text);
-}
+} 
 ```
 
-### 1.4 createComment
+### 3.1.4 appendChild
 
-    该函数的作用是创建一个注释节点封装着指定的text内容。    
-
-```js
-function createComment(text) {
-    return document.createComment(text);
-}
-```
-
-### 1.5 isDocumentFragment
-
-    该函数的作用是检查一个节点是否是文档片段。
-
-```js
-function isDocumentFragment(node) {
-    return node.nodeType === 11;
-}
-```
-
-### 1.6 appendChild
-
-    该函数的作用是将一个子节点添加到指定的父节点中。函数的执行过程就是把child这个子元素添加到node这个父元素的子元素列表的末尾。
+该函数的作用是将一个子节点添加到指定的父节点中。函数的执行过程就是把child这个子元素添加到node这个父元素的子元素列表的末尾。
 
 ```js
 function appendChild(node, child){
@@ -441,10 +422,9 @@ function appendChild(node, child){
 }
 ```
 
-### 1.7 tagName
+### 3.1.5 tagName
 
-    该函数的作用是获取传入元素（element）的标签名（tag name）
-    需要注意的是这里的返回值是大写，如果使用需要搭配toLowerCase()
+该函数的作用是获取传入元素（element）的标签名（tag name）需要注意的是这里的返回值是大写，如果使用需要搭配toLowerCase()
 
 ```js
 function tagName(elm){
@@ -452,9 +432,9 @@ function tagName(elm){
 }
 ```
 
-### 1.8 parentNode
+### 3.1.6 parentNode
 
-    该函数的作用是获取传入元素的父节点。
+该函数的作用是获取传入元素的父节点。
 
 ```js
 function parentNode(node){
@@ -462,9 +442,9 @@ function parentNode(node){
 }
 ```
 
-### 1.9 insertBefore
+### 3.1.7 insertBefore
 
-    该函数的作用是在指定的参考节点前面插入一个新的节点。
+该函数的作用是在指定的参考节点前面插入一个新的节点。
 
 ```js
 function insertBefore(
@@ -476,9 +456,9 @@ function insertBefore(
 }
 ```
 
-### 1.10 nextSibling
+### 3.1.8 nextSibling
 
-    该函数的作用是返回传入的元素elm的下一个兄弟节点
+该函数的作用是返回传入的元素elm的下一个兄弟节点
 
 ```js
 function nextSibling(elm){
@@ -486,7 +466,7 @@ function nextSibling(elm){
 }
 ```
 
-## 2. 第一步判断是不是真实节点
+## 3.2 第一步判断是不是真实节点
 
 首先判断旧节点是不是真实DOM节点，如果是真实DOM节点将其通过emptyNodeAt转化为一个虚拟节点。
 
@@ -514,7 +494,7 @@ function patch(
 }
 ```
 
-## 3. 第三步判断oldVnode和newVnode是不是同一个虚拟节点
+## 3.3 第二步判断oldVnode和newVnode是不是同一个虚拟节点
 
 在初始化时，第一次我们执行patch时oldVnode实际上是“挂载的容器”，然后会执行emptyNodeAt将oldVnode转化为一个虚拟节点。
 
@@ -537,12 +517,11 @@ if(sameVnode(oldVnode, vnode)){
     }
 ```
 
-### 3.1 sameVnode
+### 3.3.1 sameVnode
 
-    在源码中，是这么定义同一个节点的：
-    1. 旧节点的key要和新节点的key相同
-    2. 旧节点的选择器要和新节点的选择器相同
-    （实际上不止这些判断 但是核心就是使用这2个属性进行判断）
+在源码中，是这么定义同一个节点的：
+1. 旧节点的key要和新节点的key相同
+2. 旧节点的选择器要和新节点的选择器相同（实际上不止这些判断 但是核心就是使用这2个属性进行判断）
 
 ```js
 function sameVnode(vnode1, vnode2){
@@ -553,9 +532,9 @@ function sameVnode(vnode1, vnode2){
 }
 ```
 
-    当判断为同一个几点之后，就要进行精细化比较了。这部分内容比较复杂，我们放到后面再说。
+    当判断为同一个节点之后，就要进行精细化比较了。这部分内容比较复杂，我们放到后面再说。
 
-### 3.2 createElm
+### 3.3.2 createElm
 
 ```js
 function createElm(vnode){
@@ -593,17 +572,43 @@ function createElm(vnode){
 4. ```递归处理子节点```:如果children是一个数组，函数会遍历每个子节点，对每个子节点递归调用createElm()函数以生成其对应的DOM结构，然后将这些子DOM元素追加到父元素中，实现嵌套结构的构建。
 5. ```处理纯文本节点```:如果sel未定义，表明这是一个纯文本节点，直接使用api.createTextNode()创建文本节点，并将其赋值给vnode.elm。
 
-## 4、流程图
+## 3.4 流程图
 
-### 1.初次渲染流程图
+### 3.4.1 初次渲染流程图
 
 ![alt text](image-7.png)
 
-### 2.createElm流程图
+### 3.4.2 createElm流程图
 
 ![alt text](image-8.png)
 
 
-# 四、更新渲染
+# 4、更新渲染patchVnode 打补丁逻辑
 
-    上节中，我们学到了如何实现初始化渲染，即将vnode直接挂在到容器上。但是我们没有说更新是啥流程，这一节我们就会实现更新渲染这部分功能。
+上节中，我们学到了如何实现首次渲染，即将vnode直接挂载到容器上。当执行patch函数更新新旧节点时，之前我们只说明了当新旧节点是不同的情况下，暴力重新渲染新的节点。
+
+这节会补充相同节点进行更新渲染的相关逻辑。
+
+![alt text](image-18.png)
+
+## 4.1 为什么更新函数名叫patchVnode
+
+```js
+const patch = init();
+
+//首次渲染
+patch(document.getElementId('container'),vNode);
+//第二次渲染
+patch(vNode,newVnode)
+```
+
+如上面的代码所示，由于首次渲染时已经把vNode渲染到container内了，所以再次调用patch函数并尝试渲染newVnode时，就不能简单的执行挂在动作了。在这种情况下，渲染器会使用newVnode与上一次渲染的vNode进行比较，试图找到并更新变更点。这个过程叫做“打补丁”，英文通常用patch来表达。
+
+“打补丁”这个词形象地描述了patchVnode函数在vue框架中的工作方式。在计算机领域，“打补丁”通常指的是对现有程序或数据进行局部修改或修复，而不必完全重写或替换整个内容。patchVnode也是基于类似的理念工作的：
+
+1. ```最小化变更```：当Vue的数据变化时，它需要决定如何将这些变化反映到界面上。patchVnode通过对比新旧虚拟DOM树（VNode），仅对发生改变的部分进行操作，这就像是在原有的DOM结构上打上“补丁”，而不是重建整个DOM树。这种做法极大地减少了实际的DOM操作，提高了性能。
+2. ```精确更新```:就像衣服破了洞，只需要在破洞处缝上一小块布料（补丁）即可修复，而不是制作一件新衣服。同样，Vue在更新界面时，只针对有差异的部分进行精确更新，这就是“打补丁”的过程。
+
+## 4.2 判断新节点节点类型
+
+### 4.2.1 

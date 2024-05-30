@@ -109,13 +109,17 @@ export function init(){
                 console.log("新旧节点都有子节点，需要逐层比较",oldCh,ch)
             // 新节点有子节点 旧节点没有子节点
             }else if(ch !== undefined){
+                console.log("新节点有子节点 旧节点没有子节点",oldCh,ch)
                 // 如果旧节点存在文本 清除
                 if (oldVnode.text !== undefined) api.setTextContent(elm, "");
                 addVnodes(elm, null, ch, 0, ch.length - 1);
             // 新节点没有子节点 旧节点有子节点
-            }else if(oldCh !== undefined){
-                console.log("暂时未知")
+            }else if(oldCh !== undefined){ 
+                console.log("新节点没有子节点 旧节点有子节点",oldCh,ch)
+                removeVnodes(elm, oldCh, 0, oldCh.length - 1);
+            // 新节点没有子节点且没有文字节点 旧节点有文字节点 需清除
             }else if(oldVnode.text !== undefined){
+                console.log("新节点没有子节点且没有文字节点 旧节点有文字节点 需清除",oldCh,ch)
                 api.setTextContent(elm, "");
             }
         // 新节点存在text表示是文本节点
