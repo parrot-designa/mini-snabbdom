@@ -102,11 +102,12 @@ export function init(){
         const oldCh = oldVnode.children;
         const ch = vnode.children;
  
-        // 新节点有子节点的情况
+        // 新节点有子节点的情况 / 没有子节点但不是文本节点
         if(vnode.text === undefined){
             // 新旧节点都有子节点，需要逐层比较
             if (oldCh !== undefined && ch !== undefined) { 
                 console.log("新旧节点都有子节点，需要逐层比较",oldCh,ch)
+                //updateChildren(elm, oldCh, ch)
             // 新节点有子节点 旧节点没有子节点
             }else if(ch !== undefined){
                 console.log("新节点有子节点 旧节点没有子节点",oldCh,ch)

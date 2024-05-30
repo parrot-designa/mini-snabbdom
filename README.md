@@ -609,6 +609,211 @@ patch(vNode,newVnode)
 1. ```最小化变更```：当Vue的数据变化时，它需要决定如何将这些变化反映到界面上。patchVnode通过对比新旧虚拟DOM树（VNode），仅对发生改变的部分进行操作，这就像是在原有的DOM结构上打上“补丁”，而不是重建整个DOM树。这种做法极大地减少了实际的DOM操作，提高了性能。
 2. ```精确更新```:就像衣服破了洞，只需要在破洞处缝上一小块布料（补丁）即可修复，而不是制作一件新衣服。同样，Vue在更新界面时，只针对有差异的部分进行精确更新，这就是“打补丁”的过程。
 
-## 4.2 判断新节点节点类型
+## 4.2 进行dom的复用
 
-### 4.2.1 
+### 4.2.1 浏览器中的DOM
+
+DOM并不是存储在硬盘上作为文件的一部分，而是作为浏览器解析HTML后在JS引擎的内存空间里创建的一个对象模型。开发者可以通过JS来访问和修改这个内存的DOM，从而实现对网页内容的动态操作，比如添加、删除、修改DOM元素或应用样式等。用户看到的页面变化，实际上是浏览器根据内存中的DOM的状态重新渲染页面的结果。
+
+浏览器的DOM结构存储在JS的堆内存中。堆内存是用来存储复杂数据结构如对象和数组的地方，DOM树作为对象的集合，自然也被存储在这里。每当一个网页被加载，浏览器就会在堆内存中创建一个与之对应的DOM树结构。
+
+### 4.2.2 旧的vnode指向内存中的真实DOM
+
+在挂载阶段创建节点时，会将vnode中的elm属性指向内存的真实DOM。如下代码所示：
+
+```js  
+function createElm(vnode){
+    const sel = vnode.sel;
+    const data = vnode.data;
+    // 省略部分代码
+    const elm = api.createElement(sel, data);
+
+    vnode.elm = elm;
+}
+```
+
+![alt text](image-19.png)
+
+### 4.2.3 新的vnode elm复用老的vnode elm
+
+由上可知，老的vnode指向了真实DOM，那么如果想复用可以将新的vnode也指向内存中的真实DOM即可，具体代码如下：
+
+```js
+function patchVnode(oldVnode,vnode){
+    const elm = vnode.elm = oldVnode.elm;
+}
+```
+
+上面的代码将vnode.elm也指向了内存中的真实DOM，同时也创建了一个elm变量指向真实DOM。方便后续代码中使用这个真实的DOM元素。
+
+![alt text](image-20.png)
+
+
+## 4.3 获取新老节点的子节点们
+
+因为后续需要依据新节点和老节点的子节点信息来进行一些逻辑处理，所以要先获取他们的子节点信息方便后续处理。
+
+```js
+function patchVnode(oldVnode,vnode){
+    // 省略部分代码
+    const oldCh = oldVnode.children;
+    const ch = vnode.children;
+}
+```
+
+## 4.4 判断是文本节点
+
+如果新的节点是文本节点，则不管旧节点是否是文本节点都可以直接赋值，唯一不同的是如果旧节点是有子节点的，需要先移除DOM节点上的老节点，再设置文字。
+
+```js
+function patchVnode(oldVnode,vnode){
+    // 非文本节点
+    if(vnode.text === undefined){
+        // 省略部分代码
+    }
+    // 文本节点 
+    else if(oldVnode.text !== vnode.text){
+        // 旧节点存在子节点 需要先移除子节点
+        if(oldCh !== undefined){
+            removeVnodes(elm,oldCh,0,oldCh.length-1);
+        }
+        // 如果旧节点不存在子节点 直接更新即可
+        api.setTextContent(elm, vnode.text);
+    }
+}
+```
+![alt text](image-22.png)
+
+1. 通过 ```vnode.text === undefined``` 来判断不是一个文本节点。所以else就代表它是一个文本节点。
+
+2. 判断```oldVnode.text和vnode.text```是否相等，这里判断了不相等，因为如果相等表示文字没有变化，不需要更新，进而优化了部分性能。
+
+3. 如果旧节点存在子节点，需要先移除子节点，否则DOM上旧元素还在。
+
+4. 最后直接调用setTextContent更新节点上的文本信息。
+
+
+### 4.4.1 removeVnodes
+
+该函数的作用是从DOM中移除一系列指定范围的子节点。核心是调用了removeChild这个浏览器API。
+
+```js
+function removeVnodes(
+        parentElm,
+        vnodes,
+        startIdx,
+        endIdx
+){  
+        for(;startIdx <= endIdx;startIdx++) {
+            const ch = vnodes[startIdx];
+            //对于每个虚拟节点，首先检查它是否非空
+            if (ch != null) { 
+                api.removeChild(parentElm, ch.elm);  
+            }
+        }
+}
+```
+
+## 4.5 判断是非文本节点
+
+上小节我们说到判断vnode是非文本节点的方法是```vnode === undefined```。
+
+### 4.5.1 当新旧节点都是子节点时
+
+当新旧节点都有子节点时，这种情况最复杂，需要使用到双端diff算法，后续我们会详细说明。
+
+```js
+function patchVnode(oldVnode,vnode){
+    if(vnode === undefined){
+        if(oldCh !== undefined && ch !== undefined){
+            //双端diff算法 待实现
+            updateChildren(elm, oldCh, ch)
+        } 
+    }
+}
+```
+
+### 4.5.2 当新节点有子节点 旧节点没有子节点 
+
+当新节点有子节点，旧节点没有子节点时，可以将新节点的子节点创建出来的DOM直接挂载到DOM上。
+
+```js
+function patchVnode(oldVnode,vnode){
+    if(vnode === undefined){
+        if (oldCh !== undefined && ch !== undefined) { 
+            // 省略部分代码
+        } else if(ch !== undefined){
+            // 如果旧节点存在文本 清除
+            if (oldVnode.text !== undefined) api.setTextContent(elm, "");
+            addVnodes(elm, null, ch, 0, ch.length - 1);
+        }
+    }
+}
+
+function addVnodes(
+        parentElm,
+        before,
+        vnodes,
+        startIdx,
+        endIdx
+){
+        for (; startIdx <= endIdx; ++startIdx) {
+            const ch = vnodes[startIdx];
+            if (ch != null) {
+                //没有before将插入父节点的子节点列表的末尾，这相当于appendChild方法的效果
+                api.insertBefore(parentElm, createElm(ch), before);
+            }
+        }
+}
+```
+
+1. 第一个if中判断了新旧节点中都存在子节点。
+2. 第二个if中判断了新节点存在子节点，那么可以知道这个分支判断的是```新节点存在子节点，但是旧节点不存在子节点```。
+3. 如果新节点中存在子节点，但是旧节点中不存在子节点，说明需要将新节点的子节点创建出来的DOM直接挂载到DOM上，这里添加了一个判断，就是如果旧节点是文本节点，需要先清除DOM中的文本元素，再添加新的dom。
+4. addVnodes 函数和removeVnodes类似，目的是将一系列虚拟节点（VNodes）添加到DOM树中的指定位置，核心依赖insertBefore api。
+
+### 4.5.3 当新节点没有子节点 旧节点有子节点 
+
+当新节点没有子节点，旧节点有子节点时，需要在DOM中将旧节点的子节点清除。
+
+```js
+function patchVnode(oldVnode,vnode){
+    if(vnode === undefined){
+        if (oldCh !== undefined && ch !== undefined) { 
+            // 省略部分代码
+        } else if(ch !== undefined){
+            // 省略部分代码
+        } else if(oldCh !== undefined){
+            removeVnodes(elm, oldCh, 0, oldCh.length - 1);
+        }
+    }
+} 
+```
+1. 第一个if中判断了新旧节点中都存在子节点。
+2. 第二个if中判断了新节点存在子节点，但是旧节点不存在子节点。
+3. 所以可以得出第三个if中判断了新节点不存在子节点，但是旧节点存在子节点，所以需要清除DOM元素中的旧节点中的子节点。
+
+### 4.5.4 新节点没有子节点且没有文字节点 旧节点有文字节点 
+
+新节点没有子节点且没有文字节点，旧节点有文字节点需要清除节点。
+
+```js
+function patchVnode(oldVnode,vnode){
+    if(vnode === undefined){
+        if (oldCh !== undefined && ch !== undefined) { 
+            // 省略部分代码
+        } else if(ch !== undefined){
+            // 省略部分代码
+        } else if(oldCh !== undefined){
+            // 省略部分代码
+        } else if(oldVnode.text !== undefined){
+            api.setTextContent(elm, "");
+        }
+    }
+} 
+```
+
+1. 第一个if中判断了新旧节点中都存在子节点。
+2. 第二个if中判断了新节点存在子节点，旧节点不存在子节点。
+3. 第三个if中判断了新节点没有子节点，旧节点有子节点。
+4. 所以很容易知道```oldVnode.text !== undefined```表示的是旧节点是文本节点，且新节点没有子节点。故直接清除节点中的文字即可。
