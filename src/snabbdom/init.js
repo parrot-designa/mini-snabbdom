@@ -47,6 +47,26 @@ export function init(){
         }
     }
 
+    function updateChildren(parentElm,oldCh,newCh){
+        // 旧子节点的头部节点索引值
+        let oldStartIdx = 0;
+        // 旧子节点的尾部节点索引值
+        let oldEndIdx = oldCh.length - 1;
+        // 新子节点的头部节点索引值
+        let newStartIdx = 0;
+        // 新子节点的尾部节点索引值
+        let newEndIdx = newCh.length - 1;
+
+        // 旧子节点的头部节点
+        let oldStartVnode = oldCh[0];
+        // 旧子节点的尾部节点
+        let oldEndVnode = oldCh[oldEndIdx];
+        // 新子节点的头部节点
+        let newStartVnode = newCh[0];
+        // 新子节点的尾部节点
+        let newEndVnode = newCh[newEndIdx]; 
+    }
+
     function removeVnodes(
         parentElm,
         vnodes,
@@ -107,7 +127,7 @@ export function init(){
             // 新旧节点都有子节点，需要逐层比较
             if (oldCh !== undefined && ch !== undefined) { 
                 console.log("新旧节点都有子节点，需要逐层比较",oldCh,ch)
-                //updateChildren(elm, oldCh, ch)
+                updateChildren(elm, oldCh, ch)
             // 新节点有子节点 旧节点没有子节点
             }else if(ch !== undefined){
                 console.log("新节点有子节点 旧节点没有子节点",oldCh,ch)
