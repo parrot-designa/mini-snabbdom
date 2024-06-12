@@ -1052,7 +1052,9 @@ while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
 
 既然两个头部和两个尾部的四个节点中都没有可复用的节点，那么我们就尝试看看非头部、非尾部的节点能否复用。
 
-具体做法是，拿新的一组子节点中的头部节点去旧的一组子节点中寻找，
+#### 5.6.1 在旧子节点中寻找可复用节点
+
+具体做法是，拿新的一组子节点中的头部节点去旧的一组子节点中寻找。
 
 ```js
 while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
@@ -1081,3 +1083,57 @@ while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
 ![alt text](image-39.png)
 
 观察上图，当我们拿新的一组节点的头部节点p-2去旧的一组节点中查找时，会在索引为1的位置找到可复用的节点。这意味着，节点p-2原本不是头部节点，但在更新之后，它应该变成头部节点。所以我们需要将节点p-2对应的真实DOM节点移动到当前旧的一组节点的头部节点p-1所对应的真实DOM之前。
+
+```js
+while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
+            if(sameVnode(oldStartVNode, newStartVNode)){ 
+                // 省略
+            }else if(sameVnode(oldEndVNode, newEndVNode)){
+                // 省略
+            }else if(sameVnode(oldStartVNode, newEndVNode)){
+                // 省略
+            }else if(sameVnode(oldEndVNode, newStartVNode)){
+                // 省略
+            }else {
+                // 遍历旧的一组子节点，试图寻找与 newStartVNode 拥有相同 key 值的节
+
+                // idxInOld 就是新的一组子节点的头部节点在旧的一组子节点中的索引
+                const idxInOld = oldCh.findIndex(
+                    node => node.key === newStartVNode.key
+                )
+
+                // idxInOld 大于 0，说明找到了可复用的节点，并且需要将其对应的真实DOM移动到头部
+                if(idxInOld > 0){
+                    // idxInOld 位置对应的 vnode 就是需要移动的节点
+                    const vnodeToMove = oldCh[idxInOld]
+                    // 不要忘记除移动操作外还应该打补丁
+                    patchVnode(vnodeToMove, newStartVNode)
+                    // 将 vnodeToMove.el 移动到头部节点 oldStartVNode.el 之前，因此使用后者作为锚点
+                    api.insertBefore(parentElm,vnodeToMove.elm,oldStartVNode.elm);
+                    // 由于位置 idxInOld 处的节点所对应的真实 DOM 已经移动到了别处，因此将其设置为 undefined
+                    oldCh[idxInOld] = undefined
+                    // 最后更新 newStartIdx 到下一个位置
+                    newStartVNode = newCh[++newStartIdx]
+                }
+            }
+        }
+```
+
+在上面这段代码中，首先判断idInOld是否大于0。如果条件成立，则说明找到了可复用的节点，然后将该节点对应的真实DOM移动到头部。为此，我们先要获取需要移动的节点，这里的oldCh[idxInOld]所指向的节点就是需要移动的节点。在移动节点之前，不要忘记调用patchVnode函数打补丁。接着，调用insertBefore函数，并以现在的头部节点对应的真实DOM节点oldStartVNode.el作为锚点参数来完成节点的移动操作。当节点移动完成后，还有两步工作需要做。
+
+1. 由于处理idxInOld处的节点已经处理过了（对应的真实DOM移到了别处），因此我们应该将oldCh[idxInOld]设置为undefined。
+2. 新的一组节点中的头部节点已经处理完毕，因此将newStartIdx前进到下一个位置。
+
+![alt text](image-40.png)
+
+此时的节点、索引以及DOM节点如上图所示。
+
+![alt text](image-41.png)
+
+我们继续接着进行diff，接着使用之前说到的双端diff比较方法进行比较。
+
+在第四步中，我们发现旧的一组节点的尾部节点p-4和新的一组节点的头部节点p-4相同。根据之前学到的知识，p-4在旧的一组节点中是在最后一位，在新的一组节点中在第一位。因此，我们需要将旧的尾部节点所对应的DOM节点移动到旧的头部节点所对应的DOM节点之前。如下图所示：
+
+![alt text](image-42.png)
+
+#### 5.6.2 处理undefined情况
