@@ -58,43 +58,43 @@ export function init(){
         let newEndIdx = newCh.length - 1;
 
         // 旧子节点的头部节点
-        let oldStartVnode = oldCh[0];
+        let oldStartVNode = oldCh[0];
         // 旧子节点的尾部节点
-        let oldEndVnode = oldCh[oldEndIdx];
+        let oldEndVNode = oldCh[oldEndIdx];
         // 新子节点的头部节点
-        let newStartVnode = newCh[0];
+        let newStartVNode = newCh[0];
         // 新子节点的尾部节点
-        let newEndVnode = newCh[newEndIdx]; 
+        let newEndVNode = newCh[newEndIdx]; 
 
         while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
-            if(sameVnode(oldStartVnode, newStartVnode)){
-                patchVnode(oldStartVnode, newStartVnode);
-                oldStartVnode = oldCh[++oldStartIdx];
-                newStartVnode = newCh[++newStartIdx];
-            }else if(sameVnode(oldEndVnode, newEndVnode)){
-                patchVnode(oldEndVnode, newEndVnode);
-                oldEndVnode = oldCh[--oldEndIdx];
-                newEndVnode = newCh[--newEndIdx];
-            }else if(sameVnode(oldStartVnode, newEndVnode)){
-                patchVnode(oldStartVnode, newEndVnode);
+            if(sameVnode(oldStartVNode, newStartVNode)){
+                patchVnode(oldStartVNode, newStartVNode);
+                oldStartVNode = oldCh[++oldStartIdx];
+                newStartVNode = newCh[++newStartIdx];
+            }else if(sameVnode(oldEndVNode, newEndVNode)){
+                patchVnode(oldEndVNode, newEndVNode);
+                oldEndVNode = oldCh[--oldEndIdx];
+                newEndVNode = newCh[--newEndIdx];
+            }else if(sameVnode(oldStartVNode, newEndVNode)){
+                patchVnode(oldStartVNode, newEndVNode);
                 api.insertBefore(
                     parentElm,
-                    oldStartVnode.elm,
-                    api.nextSibling(oldEndVnode.elm)
+                    oldStartVNode.elm,
+                    api.nextSibling(oldEndVNode.elm)
                 );
-                oldStartVnode = oldCh[++oldStartIdx];
-                newEndVnode = newCh[--newEndIdx];
-            }else if(sameVnode(oldEndVnode, newStartVnode)){
-                patchVnode(oldEndVnode, newStartVnode);
-                api.insertBefore(parentElm, oldEndVnode.elm, api.nextSibling(oldStartVnode.elm));
-                oldEndVnode = oldCh[--oldEndIdx];
-                newStartVnode = newCh[++newStartIdx];
+                oldStartVNode = oldCh[++oldStartIdx];
+                newEndVNode = newCh[--newEndIdx];
+            }else if(sameVnode(oldEndVNode, newStartVNode)){
+                patchVnode(oldEndVNode, newStartVNode);
+                api.insertBefore(parentElm, oldEndVNode.elm, api.nextSibling(oldStartVNode.elm));
+                oldEndVNode = oldCh[--oldEndIdx];
+                newStartVNode = newCh[++newStartIdx];
             }else {
                 // 遍历旧的一组子节点，试图寻找与 newStartVNode 拥有相同 key 值的节
 
                 // idxInOld 就是新的一组子节点的头部节点在旧的一组子节点中的索引
                 const idxInOld = oldCh.findIndex(
-                    node => node.key === newStartVnode.key
+                    node => node.key === newStartVNode.key
                 )
 
                 // idxInOld 大于 0，说明找到了可复用的节点，并且需要将其对应的真实DOM移动到头部
@@ -104,11 +104,11 @@ export function init(){
                     // 不要忘记除移动操作外还应该打补丁
                     patchVnode(vnodeToMove, newStartVNode)
                     // 将 vnodeToMove.el 移动到头部节点 oldStartVNode.el 之前，因此使用后者作为锚点
-                    api.insertBefore(parentElm,vnodeToMove,oldStartVnode);
+                    api.insertBefore(parentElm,vnodeToMove.elm,oldStartVNode.elm);
                     // 由于位置 idxInOld 处的节点所对应的真实 DOM 已经移动到了别处，因此将其设置为 undefined
                     oldCh[idxInOld] = undefined
                     // 最后更新 newStartIdx 到下一个位置
-                    newStartVNode = newChildren[++newStartIdx]
+                    newStartVNode = newCh[++newStartIdx]
                 }
             }
         }
