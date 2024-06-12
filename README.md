@@ -922,5 +922,162 @@ function updateChildren(parentElm,oldCh,newCh){
 
 ### 5.3.1 第三步和第四步顺序容易搞混？
 
-## 5.3 双端比较的循环条件
+第三步比较 和 第四步比较对应的是双端中的“X”位置，很多人容易把它们的顺序给弄混淆。你只需要记得是旧节点和新节点进行对比，所以需要先从旧节点的头部节点开始对比。
 
+## 5.4 双端比较的循环条件
+
+双端diff每一轮循环是通过不断的移动索引值来完成的。循环会持续进行，直到以下任一条件满足为止：
+1. newStartIdx大于等于newEndIdx，意味着新节点列表已经被完全遍历。
+2. oldStartIdx大于等于oldEndIdx，意味着旧节点列表已经被完全遍历。
+
+### 5.4.1 代码
+
+如下代码所示，oldStartIdx大于oldEndIdx或者newStartIdx大于newEndIdx时，需要跳出循环：
+
+```js
+while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
+
+}
+```
+
+## 5.5 双端比较四步匹配如何移动
+
+我们知道双端diff存在的意义就是找到尽可能的复用节点，避免重新销毁、创建元素带来的性能损耗，这一节我们讨论下应该如何移动节点呢？
+
+我们还以之前使用的数据为准，如下图，此时，DOM元素的顺序还是跟旧节点保持一致。
+
+![alt text](image-35.png)
+
+
+### 5.5.1 双端对比第四步：旧节点的尾部节点和新节点的头部节点相同 - 进行移动
+
+
+如上图，在第一轮diff比较中的第四步比较中，旧子节点的尾部节点P-4和新子节点的头部节点P-4一样，说明它们对应的真实DOM可以进行复用。对于可复用的DOM节点，我们只需要通过DOM移动操作完成更新即可。
+
+为了搞清楚这个问题，我们需要分析第四步比较过程中的细节。我们注意到：第四步是比较旧的一组子节点的最后一个子节点与新的一组子节点的第一个子节点，发现两者相同。这说明：```节点p-4原本是最后一个子节点，但在新的顺序中，它变成了第一个子节点```。换句话说，节点p-4在更新之后应该是第一个节点。对应到程序中的逻辑，可以将其翻译为：```将索引oldEndIdx指向的虚拟节点所对应的真实DOM移动到索引oldStartIdx指向的虚拟节点所对应的真实DOM前面```。如下图：
+
+
+![alt text](image-34.png)
+
+代码如下所示：
+```js
+if(sameVnode(oldEndVnode, newStartVnode)){
+    patchVnode(oldEndVnode, newStartVnode);
+    api.insertBefore(parentElm, oldEndVnode.elm, oldStartVnode.elm);
+    oldEndVnode = oldCh[--oldEndIdx];
+    newStartVnode = newCh[++newStartIdx];
+}
+```
+
+1. 在对比相同时，需要调用patchVnode对节点进行打补丁，因为相同节点只能代表当前层级是相同的，并不能代表他的子节点信息等是相同的，所以需要对子节点继续进行比较。
+2. ```oldEndVnode.elm``` 代表旧节点的尾部节点对应的真实节点，```oldStartVnode.elm```代表旧节点的头部节点，insertBefore API可以将元素插入到某个元素之前。
+3. DOM元素移动成功，移动oldEndIdx指针以及newStartIdx指向至未处理的节点处。
+4. 此时DOM以及移动完成。
+
+### 5.5.2 双端对比第一步&第二步 - 无需移动
+
+如果在双端对比的第一步和第二步相同时，因为2者都同时处于尾部或者头部，因此不需要进行移动操作，只需要打补丁进行深度比较即可。
+
+```js
+while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
+    if(sameVnode(oldStartVnode, newStartVnode)){
+        patchVnode(oldStartVnode, newStartVnode);
+        oldStartVnode = oldCh[++oldStartIdx];
+        newStartVnode = newCh[++newStartIdx];
+    }else if(sameVnode(oldEndVnode, newEndVnode)){
+        patchVnode(oldEndVnode, newEndVnode);
+        oldEndVnode = oldCh[--oldEndIdx];
+        newEndVnode = newCh[--newEndIdx];
+    }else if(sameVnode(oldEndVnode, newStartVnode)){
+        // 省略部分逻辑
+    }
+}
+```
+如下图：第二轮比较中新旧两组节点中的尾部节点相同，无需移动DOM节点。
+
+![alt text](image-36.png)
+
+
+### 5.5.3 双端对比第三步 - 旧节点的头部节点和新节点的尾部节点相同 - 进行移动
+
+在上一轮循环中，我们并没有移动节点，只是对节点进行打补丁操作并移动索引。
+
+如上图，在第三步的比较中我们发现两者节点相同。这说明：```节点p-1原本是头部节点，但在新的顺序中，它变成了尾部节点。```换句话说，```节点p-1在更新之后应该是最后一个节点```。因此，```我们需要将节点p-1对应的真实DOM移动到旧的一组子节点的尾部节点p-2所对应的真实DOM后面```。
+
+```js
+   while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
+            if(sameVnode(oldStartVnode, newStartVnode)){
+                // 省略
+            }else if(sameVnode(oldEndVnode, newEndVnode)){
+                // 省略
+            }else if(sameVnode(oldStartVnode, newEndVnode)){
+                patchVnode(oldStartVnode, newEndVnode);
+                api.insertBefore(
+                    parentElm,
+                    oldStartVnode.elm,
+                    api.nextSibling(oldEndVnode.elm)
+                );
+                oldStartVnode = oldCh[++oldStartIdx];
+                newEndVnode = newCh[--newEndIdx];
+            }else if(sameVnode(oldEndVnode, newStartVnode)){
+                // 省略
+            }
+        }
+```
+
+![alt text](image-37.png)
+
+如上图所示，其实这个时候DOM元素的顺序已经完全调整好了，但是由于还有一组数据没有对比完，所以要接着进行对比，我们可以发现，新旧节点均只存在一组节点，我们进行对比，发现节点一样，由于这属于第一步，不需要进行DOM移动，只需要打补丁即可。
+
+### 5.5.4 总结
+
+经过上面的实践，我们可以对该现象进行总结：
+1. 在执行双端diff的第一步（新旧两组节点的头部节点进行比较）和第二步（新旧两组节点的尾部节点进行比较）时，如果找到相同节点，不需要移动DOM，只需要打补丁。
+2. 在执行双端diff的第三步（旧的一组节点的头部节点与新的一组节点的尾部节点）时，如果找到相同节点，需要将旧的一组节点的头部节点引用的真实节点插入到旧的一组子节点的尾部节点引用的真实节点之后。同时需要打补丁。
+3. 在执行双端diff的第四步（旧的一组节点的尾部节点与新的一组节点的头部节点）时，如果找到相同节点，需要将旧的一组节点的尾部节点引用的真实节点插入到旧的一组子节点的头部节点引用的真实节点之前。同时需要打补丁。
+
+### 5.5.5 思考：为什么在第三步/第四步中 节点移动的位置跟当前处理中的元素位置有关
+
+不知道大家有没有质疑过，在第三步时，节点移动的位置不是插在整个DOM树的最后一个位置，而是跟当前处理中的元素位置有关。即头部节点和尾部节点有关。
+
+因为在第三步双端diff比较的过程中，尾部节点的索引是一直向上的，所以后面处理的元素一定不会比之前处理过的元素位置要更靠后。也就是说一定会在当前处理元素的最后一位。
+
+### 5.6 非理想情况下应该如何操作
+
+之前我们举的例子一直是比较理想的情况，即每一轮diff对比都能够命中，但是实际中可能存在无法命中的情况。
+
+![alt text](image-38.png)
+
+如上图所示，我们使用之前的diff对比方法发现四步均无法找到可复用的节点，这个时候我们需要添加额外的处理步骤来处理这种非理想的情况。
+
+既然两个头部和两个尾部的四个节点中都没有可复用的节点，那么我们就尝试看看非头部、非尾部的节点能否复用。
+
+具体做法是，拿新的一组子节点中的头部节点去旧的一组子节点中寻找，
+
+```js
+while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
+            if(sameVnode(oldStartVnode, newStartVnode)){
+                //省略
+            }else if(sameVnode(oldEndVnode, newEndVnode)){
+                //省略
+            }else if(sameVnode(oldStartVnode, newEndVnode)){
+                //省略
+            }else if(sameVnode(oldEndVnode, newStartVnode)){
+                //省略
+            }else {
+                // 遍历旧的一组子节点，试图寻找与 newStartVNode 拥有相同 key 值的节
+
+                // idxInOld 就是新的一组子节点的头部节点在旧的一组子节点中的索引
+                const idxInOld = oldCh.findIndex(
+                    node => node.key === newStartVnode.key
+                )
+            }
+        }
+```
+在上面这段代码中，我们遍历旧的一组节点，尝试在其中寻找与新的一组节点的头部节点具有相同key值的节点，并将该节点在旧的一组节点中的索引存储到变量idxInOld中。
+
+```那么在旧的一组子节点中，找到与新的一组子节点的头部节点具有相同key值的节点意味着什么呢？```
+
+![alt text](image-39.png)
+
+观察上图，当我们拿新的一组节点的头部节点p-2去旧的一组节点中查找时，会在索引为1的位置找到可复用的节点。这意味着，节点p-2原本不是头部节点，但在更新之后，它应该变成头部节点。所以我们需要将节点p-2对应的真实DOM节点移动到当前旧的一组节点的头部节点p-1所对应的真实DOM之前。
