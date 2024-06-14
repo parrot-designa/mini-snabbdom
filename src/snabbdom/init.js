@@ -9,7 +9,7 @@ function isElement(
     return api.isElement(vnode);
 }
 
-function sameVnode(vnode1, vnode2){
+function sameVNode(vnode1, vnode2){
     const isSameKey = vnode1.key === vnode2.key;
     const isSameSel = vnode1.sel === vnode2.sel;
     
@@ -72,15 +72,15 @@ export function init(){
                 oldStartVNode = oldCh[++oldStartIdx];
             }else if(!oldEndVNode){
                 oldEndVNode = oldCh[--oldEndIdx];
-            }else if(sameVnode(oldStartVNode, newStartVNode)){
+            }else if(sameVNode(oldStartVNode, newStartVNode)){
                 patchVnode(oldStartVNode, newStartVNode);
                 oldStartVNode = oldCh[++oldStartIdx];
                 newStartVNode = newCh[++newStartIdx];
-            }else if(sameVnode(oldEndVNode, newEndVNode)){
+            }else if(sameVNode(oldEndVNode, newEndVNode)){
                 patchVnode(oldEndVNode, newEndVNode);
                 oldEndVNode = oldCh[--oldEndIdx];
                 newEndVNode = newCh[--newEndIdx];
-            }else if(sameVnode(oldStartVNode, newEndVNode)){
+            }else if(sameVNode(oldStartVNode, newEndVNode)){
                 patchVnode(oldStartVNode, newEndVNode);
                 api.insertBefore(
                     parentElm,
@@ -89,7 +89,7 @@ export function init(){
                 );
                 oldStartVNode = oldCh[++oldStartIdx];
                 newEndVNode = newCh[--newEndIdx];
-            }else if(sameVnode(oldEndVNode, newStartVNode)){
+            }else if(sameVNode(oldEndVNode, newStartVNode)){
                 patchVnode(oldEndVNode, newStartVNode);
                 api.insertBefore(parentElm, oldEndVNode.elm, api.nextSibling(oldStartVNode.elm));
                 oldEndVNode = oldCh[--oldEndIdx];
@@ -191,14 +191,14 @@ export function init(){
     }
 
     function patchVnode(
-        oldVnode,
+        oldVNode,
         vnode
     ){
-        const elm = vnode.elm = oldVnode.elm;
+        const elm = vnode.elm = oldVNode.elm;
         // 如果在内存中是同一个对象 则什么都不做
-        if(oldVnode === vnode) return;  
+        if(oldVNode === vnode) return;  
         
-        const oldCh = oldVnode.children;
+        const oldCh = oldVNode.children;
         const ch = vnode.children;
  
         // 新节点有子节点的情况 / 没有子节点但不是文本节点
@@ -211,19 +211,19 @@ export function init(){
             }else if(ch !== undefined){
                 console.log("新节点有子节点 旧节点没有子节点",oldCh,ch)
                 // 如果旧节点存在文本 清除
-                if (oldVnode.text !== undefined) api.setTextContent(elm, "");
+                if (oldVNode.text !== undefined) api.setTextContent(elm, "");
                 addVnodes(elm, null, ch, 0, ch.length - 1);
             // 新节点没有子节点 旧节点有子节点
             }else if(oldCh !== undefined){ 
                 console.log("新节点没有子节点 旧节点有子节点",oldCh,ch)
                 removeVnodes(elm, oldCh, 0, oldCh.length - 1);
             // 新节点没有子节点且没有文字节点 旧节点有文字节点 需清除
-            }else if(oldVnode.text !== undefined){
+            }else if(oldVNode.text !== undefined){
                 console.log("新节点没有子节点且没有文字节点 旧节点有文字节点 需清除",oldCh,ch)
                 api.setTextContent(elm, "");
             }
         // 新节点存在text表示是文本节点
-        }else if(oldVnode.text !== vnode.text){
+        }else if(oldVNode.text !== vnode.text){
             // 旧节点存在子节点 需要先移除子节点
             if(oldCh !== undefined){
                 removeVnodes(elm,oldCh,0,oldCh.length-1);
@@ -234,22 +234,22 @@ export function init(){
     }
 
     return function patch(
-        oldVnode,
+        oldVNode,
         vnode
     ){
         let elm,parent;
         // 第一步，判断传入的第一个参数，是DOM节点还是虚拟节点
-        if(isElement(api, oldVnode)){
+        if(isElement(api, oldVNode)){
             // 传入的第一个参数是DOM节点 ，此时要包装为虚拟节点
-            oldVnode = emptyNodeAt(oldVnode);
+            oldVNode = emptyNodeAt(oldVNode);
         }
 
-        if(sameVnode(oldVnode, vnode)){
+        if(sameVNode(oldVNode, vnode)){
             console.log("是同一个节点")
-            patchVnode(oldVnode, vnode);
+            patchVnode(oldVNode, vnode);
         }else{
             console.log("不是同一个节点，暴力插入新的，删除旧的",vnode);
-            elm = oldVnode.elm;
+            elm = oldVNode.elm;
             parent = api.parentNode(elm);
 
             createElm(vnode);

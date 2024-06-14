@@ -164,19 +164,19 @@ let component = {
 };
  
 // 首次渲染，生成虚拟DOM
-let oldVnode = Vue.render(component);
+let oldVNode = Vue.render(component);
  
 // 假设数据(data)更新，产生新的虚拟DOM
 let newVnode = Vue.render(component);
  
 // Vue的diff算法比较新旧虚拟DOM
-let patches = Vue.diff(oldVnode, newVnode);
+let patches = Vue.diff(oldVNode, newVnode);
  
 // 根据diff结果应用到实际DOM
 Vue.patch(document.body, patches);
 ```
 
-在这个例子中，Vue首次渲染组件时生成了一个虚拟DOM节点（oldVnode）。当组件的数据更新时，Vue再次渲染组件，生成了一个新的虚拟DOM节点（newVnode）。Vue的diff算法会比较这两个虚拟节点，找出需要执行的最小DOM操作（patches），最后这些DOM操作会被应用到实际的DOM上，以此来更新视图。
+在这个例子中，Vue首次渲染组件时生成了一个虚拟DOM节点（oldVNode）。当组件的数据更新时，Vue再次渲染组件，生成了一个新的虚拟DOM节点（newVnode）。Vue的diff算法会比较这两个虚拟节点，找出需要执行的最小DOM操作（patches），最后这些DOM操作会被应用到实际的DOM上，以此来更新视图。
 
 
 ## 1.4 snabbdom简介
@@ -233,13 +233,13 @@ document.getElementById('btn').addEventListener('click',()=>{
 
 # 2、生成虚拟DOM的方法h
 
-我们这里不讨论DOM如何变成虚拟DOM 这属于模板编译原理范畴 但是虚拟节点变成DOM节点我们这篇会说到。
+我们这里不讨论DOM如何变成虚拟DOM，这属于模板编译原理范畴 但是虚拟节点变成DOM节点我们这篇会说到。
 
 ## 2.1 Vue的runtime-only模式
 
 在Vue中，通常我们会采取Runtime-Only模式运行Vue项目，在这个模式中，我们在构建阶段所有的模版```(<template>标签中的HTML)```已经被预编译成Javascript渲染函数（render函数），预编译过程通常由如vue-loader配合vue-template-compiler这样的工具在Webpack构建过程中完成，它们会把.vue文件中的模板转换为高效的JavaScript代码。
 
-![alt text](image-6.png)
+![alt text](image-used11.png)
 
     这里为什么不是render而是staticRenderFns呢？staticRenderFns 是 Vue 中的一个概念，与 Vue 的渲染机制相关。在 Vue 的模板编译过程中，对于某些静态的、不依赖于数据变化的 DOM 结构，Vue 会将其提取出来，生成对应的渲染函数并放在 staticRenderFns 数组里。这样做是为了优化渲染性能，因为静态内容在初次渲染后不需要随着数据变化而更新，可以避免不必要的重新渲染。
 
@@ -261,7 +261,7 @@ export function vnode(
 }
 ```
 
-    由上面的代码可以看出虚拟节点vnode的属性有哪些：
+由上面的代码可以看出虚拟节点vnode的属性有哪些：
 
 ```js
 {
@@ -277,21 +277,18 @@ export function vnode(
 
 ## 2.3 h函数
 
-上节我们知道，在vue中是通过模版编译将html编译成为一个render函数，其实这个render函数运行的返回值就是虚拟DOM。我们可以看到vue中采用的是vm._c来实现生成虚拟DOM，而在snabbdom中是使用h函数来生成虚拟DOM的。
+上节我们知道，在vue中是通过模版编译将html编译成为一个render函数，其实这个render函数运行的返回值就是虚拟DOM。我们可以看到vue中采用的是```vm._c```来实现生成虚拟DOM，而在snabbdom中是使用```h函数```来生成虚拟DOM的。
 
 
 ### 2.3.1 h函数使用
 
 比如这样调用h函数：
 ```js
-h('a', 
-    {
-        props:{
-            href:'http://www.baidu.com'
-        }
-    }, 
-    "百度一下"
-);
+h('a', {
+    props:{
+        href:'http://www.baidu.com'
+    }
+}, "百度一下");
 ```
 将得到这样的虚拟节点：
 ```js
@@ -361,7 +358,7 @@ export function h(sel, b, c){
 }
 ```
 
-h函数其实也没有什么好讲的，可以看到这个函数最后返回了一个vnode方法的返回值，可以知道h函数就是调用vnode对传入的属性进行整合，最后返回vnode，至于其中的一大堆逻辑，其实就是对第二个参数和第三个参数进行数据的兼容，比如：
+h函数其实也没有什么好讲的，可以看到这个函数最后返回了一个vnode方法的返回值，可以知道h函数就是调用vnode对传入的属性进行整合，最后返回vnode，至于其中的一大堆逻辑，其实就是```对第二个参数和第三个参数进行数据的兼容```，比如：
 
 ```js
 h('div',undefined,['hello']) 
@@ -371,11 +368,26 @@ h('div',['hello'])
 
 上面这2个vnode是完全相等的。这里hello是要放到子节点里面的，即vnode的children属性中，但是我们这里将hello放进了第二个参数，所以函数需要判断用户真实的意图，这里的逻辑是判断第二个参数如果是数组即将其变成children属性，
 
-这里需要注意的是这个函数最后会循环遍历children，如果children中存在原始类型如文本，他会将其转化为一个文本vnode。
+> 这里需要注意的是这个函数最后会循环遍历children，如果children中存在原始类型如文本，他会将其转化为一个文本vnode。
 
 # 3、首次挂载
 
-    初始化渲染时，不用进行diff判断，直接将整个虚拟DOM挂载到容器上。
+
+```js
+const container = document.getElementById("container");
+
+const myVnode = h('div',[
+  h('div',{key:1},'1'),
+  h('div',{key:2},'2'),
+  h('div',{key:3},'3'),
+  // h('div',{key:4},'4'),
+]);
+
+patch(container, myVnode);
+```
+
+如上所示，初始化渲染时调用patch函数。第一个参数是一个DOM节点，代表需要挂载的容器。第二个参数是一个JS对象，代表需要挂载的虚拟节点。
+初次渲染不用进行diff判断，直接将整个虚拟DOM生成的真实DOM挂载到容器上。
 
 ## 3.1 前置知识-DOM相关操作
 
@@ -427,7 +439,7 @@ function appendChild(node, child){
 
 ### 3.1.5 tagName
 
-该函数的作用是获取传入元素（element）的标签名（tag name）需要注意的是这里的返回值是大写，如果使用需要搭配toLowerCase()
+该函数的作用是获取传入元素（element）的标签名（tag name）需要注意的是这里的返回值是大写，如果使用需要搭配toLowerCase()。
 
 ```js
 function tagName(elm){
@@ -461,7 +473,7 @@ function insertBefore(
 
 ### 3.1.8 nextSibling
 
-该函数的作用是返回传入的元素elm的下一个兄弟节点
+该函数的作用是返回传入的元素elm的下一个兄弟节点。
 
 ```js
 function nextSibling(elm){
@@ -469,9 +481,27 @@ function nextSibling(elm){
 }
 ```
 
-## 3.2 第一步判断是不是真实节点
+## 3.2 第一步判断是不是真实节点 
 
-首先判断旧节点是不是真实DOM节点，如果是真实DOM节点将其通过emptyNodeAt转化为一个虚拟节点。
+```js
+function patch(
+    oldVNode,
+    newVnode
+){ 
+    if(isElement(api,oldVNode)){
+        oldVNode = emptyNodeAt(oldVNode);
+    }
+}
+```
+
+* 通过isElement来判断oldVNode是不是真实节点。因为在初次渲染时，oldVNode是挂载的真实DOM节点。如果oldVNode是真实DOM节点，需要将其通过emptyNodeAt转化成虚拟节点。
+
+### 3.2.1 emptyNodeAt
+
+emptyNodeAt函数可以将一个DOM节点转化为虚拟节点，实际上就是调用vnode函数。其中有以下2点需要注意。
+
+1. 将虚拟节点的elm属性指向传入的dom节点。
+2. 如果节点上存在id，将其拼接起来并传入到虚拟节点的type中，这也是区分容器与挂载节点的核心要点。
 
 ```js
 // 一个将dom节点转化为虚拟节点的函数
@@ -485,59 +515,64 @@ function emptyNodeAt(elm){
             elm
         );
 }
-function patch(
-    oldVnode,
-    newVnode
-){
-    // 首先判断oldVnode是不是虚拟节点（这里的api就是dom一些方法的集合）
-    if(isElement(api,oldVnode)){
-        // 传入的第一个参数是DOM节点 ，此时要包装为虚拟节点
-        oldVnode = emptyNodeAt(oldVnode);
-    }
-}
 ```
 
-## 3.3 第二步判断oldVnode和newVnode是不是同一个虚拟节点
+## 3.3 第二步判断oldVNode和newVnode是不是同一个虚拟节点
 
-在初始化时，第一次我们执行patch时oldVnode实际上是“挂载的容器”，然后会执行emptyNodeAt将oldVnode转化为一个虚拟节点。
+在初始化时，第一次我们执行patch时oldVNode实际上是“挂载的容器”，然后会执行emptyNodeAt将oldVNode转化为一个虚拟节点。
 
 ```js
-// 判断是否是同一个虚拟节点
-if(sameVnode(oldVnode, vnode)){
-    console.log("是同一个节点，进行精细化比较")         
-}else{
-    console.log("不是同一个节点，暴力插入新的，删除旧的");
-    // 获取旧虚拟节点的真实节点
-    elm = oldVnode.elm;
-    // 因为我们这里暴力插入新的节点，删除旧的节点，这里旧的节点实际上指的就是这个容器，而插入节点需要调用insertBefore，所以需要获取旧节点的父元素 方便后续调用
-    parent = api.parentNode(elm);
-    // 在虚拟节点上创建真实节点的方法
-    createElm(vnode);
+function patch(
+    oldVNode,
+    newVnode
+){ 
+    if(isElement(api,oldVNode)){
+        oldVNode = emptyNodeAt(oldVNode);
+    } 
+    if(sameVNode(oldVNode, vnode)){
+        // 省略 （精细化比较，后续会讨论）       
+    }else{ 
+        elm = oldVNode.elm; 
+        parent = api.parentNode(elm);
+        // 在虚拟节点上创建真实节点的方法
+        createElm(vnode);
 
-    if(parent !== null){
-        api.insertBefore(parent, vnode.elm, api.nextSibling(elm));
+        if(parent !== null){
+            api.insertBefore(parent, vnode.elm, api.nextSibling(elm));
+            }
         }
-    }
-```
+} 
+``` 
 
-### 3.3.1 sameVnode
+### 3.3.1 属于同一个节点
 
-在源码中，是这么定义同一个节点的：
+初次渲染时将oldVNode由真实DOM转化为对应的虚拟节点，然后调用sameVNode来判断是否是同一个节点。如果是同一个节点，会进行进一步比较（这部分内容比较复杂，我们放到后面再说）。 
+
+#### 3.3.1.1 sameVNode
+
+在源码中，是这么定义```同一个节点```的：
 1. 旧节点的key要和新节点的key相同
 2. 旧节点的选择器要和新节点的选择器相同（实际上不止这些判断 但是核心就是使用这2个属性进行判断）
 
 ```js
-function sameVnode(vnode1, vnode2){
+function sameVNode(vnode1, vnode2){
     const isSameKey = vnode1.key === vnode2.key;
     const isSameSel = vnode1.sel === vnode2.sel;
 
     return isSameKey && isSameSel;
 }
 ```
+ 
+### 3.3.2 不属于同一个节点
 
-    当判断为同一个节点之后，就要进行精细化比较了。这部分内容比较复杂，我们放到后面再说。
+当不属于同一个节点时，将虚拟节点变成真实DOM直接```挂载到旧节点对应的真实DOM之前```。在初次渲染时，这里的旧节点代表挂载容器container对应的虚拟节点。
 
-### 3.3.2 createElm
+1. 第一步 ```elm = oldVNode.elm``` 获取旧节点对应的真实DOM。
+2. 第二步 ```parent = api.parentNode(elm);``` 获取旧节点对应的真实DOM的父节点。因为我们这里暴力插入新的节点，删除旧的节点，这里旧的节点实际上指的就是这个容器，而插入节点需要调用insertBefore，所以需要获取旧节点的父元素 方便后续调用。
+3. 第三步调用```createElm```函数创建挂载虚拟节点的真实DOM。
+4. 第四步调用```insertBefore```将创建的真实DOM插入到旧节点之后。
+
+#### 3.3.2.1 createElm
 
 ```js
 function createElm(vnode){
@@ -579,11 +614,11 @@ function createElm(vnode){
 
 ### 3.4.1 初次渲染流程图
 
-![alt text](image-7.png)
+![alt text](image-used12.png)
 
 ### 3.4.2 createElm流程图
 
-![alt text](image-8.png)
+![alt text](image-used13.png)
 
 
 # 4、更新渲染patchVnode 打补丁逻辑
@@ -642,8 +677,8 @@ function createElm(vnode){
 由上可知，老的vnode指向了真实DOM，那么如果想复用可以将新的vnode也指向内存中的真实DOM即可，具体代码如下：
 
 ```js
-function patchVnode(oldVnode,vnode){
-    const elm = vnode.elm = oldVnode.elm;
+function patchVnode(oldVNode,vnode){
+    const elm = vnode.elm = oldVNode.elm;
 }
 ```
 
@@ -657,9 +692,9 @@ function patchVnode(oldVnode,vnode){
 因为后续需要依据新节点和老节点的子节点信息来进行一些逻辑处理，所以要先获取他们的子节点信息方便后续处理。
 
 ```js
-function patchVnode(oldVnode,vnode){
+function patchVnode(oldVNode,vnode){
     // 省略部分代码
-    const oldCh = oldVnode.children;
+    const oldCh = oldVNode.children;
     const ch = vnode.children;
 }
 ```
@@ -669,13 +704,13 @@ function patchVnode(oldVnode,vnode){
 如果新的节点是文本节点，则不管旧节点是否是文本节点都可以直接赋值，唯一需要注意的是如果旧节点是有子节点的，需要先移除DOM节点上的老节点，再设置文字。
 
 ```js
-function patchVnode(oldVnode,vnode){
+function patchVnode(oldVNode,vnode){
     // 非文本节点
     if(vnode.text === undefined){
         // 省略部分代码
     }
     // 文本节点 
-    else if(oldVnode.text !== vnode.text){
+    else if(oldVNode.text !== vnode.text){
         // 旧节点存在子节点 需要先移除子节点
         if(oldCh !== undefined){
             removeVnodes(elm,oldCh,0,oldCh.length-1);
@@ -689,7 +724,7 @@ function patchVnode(oldVnode,vnode){
 
 1. 通过 ```vnode.text === undefined``` 来判断不是一个文本节点。所以else就代表它是一个文本节点。
 
-2. 判断```oldVnode.text和vnode.text```是否相等，这里判断了不相等，因为如果相等表示文字没有变化，不需要更新，进而优化了部分性能。
+2. 判断```oldVNode.text和vnode.text```是否相等，这里判断了不相等，因为如果相等表示文字没有变化，不需要更新，进而优化了部分性能。
 
 3. 如果旧节点存在子节点，需要先移除子节点，否则DOM上旧元素还在。
 
@@ -726,7 +761,7 @@ function removeVnodes(
 当新旧节点都有子节点时，这种情况最复杂，需要使用到双端diff算法，后续我们会详细说明。
 
 ```js
-function patchVnode(oldVnode,vnode){
+function patchVnode(oldVNode,vnode){
     if(vnode === undefined){
         if(oldCh !== undefined && ch !== undefined){
             //双端diff算法 待实现
@@ -741,13 +776,13 @@ function patchVnode(oldVnode,vnode){
 当新节点有子节点，旧节点没有子节点时，可以将新节点的子节点创建出来的DOM直接挂载到DOM上。
 
 ```js
-function patchVnode(oldVnode,vnode){
+function patchVnode(oldVNode,vnode){
     if(vnode === undefined){
         if (oldCh !== undefined && ch !== undefined) { 
             // 省略部分代码
         } else if(ch !== undefined){
             // 如果旧节点存在文本 清除
-            if (oldVnode.text !== undefined) api.setTextContent(elm, "");
+            if (oldVNode.text !== undefined) api.setTextContent(elm, "");
             addVnodes(elm, null, ch, 0, ch.length - 1);
         }
     }
@@ -780,7 +815,7 @@ function addVnodes(
 当新节点没有子节点，旧节点有子节点时，需要在DOM中将旧节点的子节点清除。
 
 ```js
-function patchVnode(oldVnode,vnode){
+function patchVnode(oldVNode,vnode){
     if(vnode === undefined){
         if (oldCh !== undefined && ch !== undefined) { 
             // 省略部分代码
@@ -801,7 +836,7 @@ function patchVnode(oldVnode,vnode){
 新节点没有子节点且没有文字节点，旧节点有文字节点需要清除节点。
 
 ```js
-function patchVnode(oldVnode,vnode){
+function patchVnode(oldVNode,vnode){
     if(vnode === undefined){
         if (oldCh !== undefined && ch !== undefined) { 
             // 省略部分代码
@@ -809,7 +844,7 @@ function patchVnode(oldVnode,vnode){
             // 省略部分代码
         } else if(oldCh !== undefined){
             // 省略部分代码
-        } else if(oldVnode.text !== undefined){
+        } else if(oldVNode.text !== undefined){
             api.setTextContent(elm, "");
         }
     }
@@ -819,7 +854,7 @@ function patchVnode(oldVnode,vnode){
 1. 第一个if中判断了新旧节点中都存在子节点。
 2. 第二个if中判断了新节点存在子节点，旧节点不存在子节点。
 3. 第三个if中判断了新节点没有子节点，旧节点有子节点。
-4. 所以很容易知道```oldVnode.text !== undefined```表示的是旧节点是文本节点，且新节点没有子节点。故直接清除节点中的文字即可。
+4. 所以很容易知道```oldVNode.text !== undefined```表示的是旧节点是文本节点，且新节点没有子节点。故直接清除节点中的文字即可。
 
 # 5、双端diff核心函数-updateChildren
 
@@ -965,7 +1000,7 @@ while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
 
 代码如下所示：
 ```js
-if(sameVnode(oldEndVnode, newStartVnode)){
+if(sameVNode(oldEndVnode, newStartVnode)){
     patchVnode(oldEndVnode, newStartVnode);
     api.insertBefore(parentElm, oldEndVnode.elm, oldStartVnode.elm);
     oldEndVnode = oldCh[--oldEndIdx];
@@ -984,15 +1019,15 @@ if(sameVnode(oldEndVnode, newStartVnode)){
 
 ```js
 while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
-    if(sameVnode(oldStartVnode, newStartVnode)){
+    if(sameVNode(oldStartVnode, newStartVnode)){
         patchVnode(oldStartVnode, newStartVnode);
         oldStartVnode = oldCh[++oldStartIdx];
         newStartVnode = newCh[++newStartIdx];
-    }else if(sameVnode(oldEndVnode, newEndVnode)){
+    }else if(sameVNode(oldEndVnode, newEndVnode)){
         patchVnode(oldEndVnode, newEndVnode);
         oldEndVnode = oldCh[--oldEndIdx];
         newEndVnode = newCh[--newEndIdx];
-    }else if(sameVnode(oldEndVnode, newStartVnode)){
+    }else if(sameVNode(oldEndVnode, newStartVnode)){
         // 省略部分逻辑
     }
 }
@@ -1010,11 +1045,11 @@ while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
 
 ```js
    while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
-            if(sameVnode(oldStartVnode, newStartVnode)){
+            if(sameVNode(oldStartVnode, newStartVnode)){
                 // 省略
-            }else if(sameVnode(oldEndVnode, newEndVnode)){
+            }else if(sameVNode(oldEndVnode, newEndVnode)){
                 // 省略
-            }else if(sameVnode(oldStartVnode, newEndVnode)){
+            }else if(sameVNode(oldStartVnode, newEndVnode)){
                 patchVnode(oldStartVnode, newEndVnode);
                 api.insertBefore(
                     parentElm,
@@ -1023,7 +1058,7 @@ while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
                 );
                 oldStartVnode = oldCh[++oldStartIdx];
                 newEndVnode = newCh[--newEndIdx];
-            }else if(sameVnode(oldEndVnode, newStartVnode)){
+            }else if(sameVNode(oldEndVnode, newStartVnode)){
                 // 省略
             }
         }
@@ -1062,13 +1097,13 @@ while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
 
 ```js
 while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
-            if(sameVnode(oldStartVnode, newStartVnode)){
+            if(sameVNode(oldStartVnode, newStartVnode)){
                 //省略
-            }else if(sameVnode(oldEndVnode, newEndVnode)){
+            }else if(sameVNode(oldEndVnode, newEndVnode)){
                 //省略
-            }else if(sameVnode(oldStartVnode, newEndVnode)){
+            }else if(sameVNode(oldStartVnode, newEndVnode)){
                 //省略
-            }else if(sameVnode(oldEndVnode, newStartVnode)){
+            }else if(sameVNode(oldEndVnode, newStartVnode)){
                 //省略
             }else {
                 // 遍历旧的一组子节点，试图寻找与 newStartVNode 拥有相同 key 值的节
@@ -1090,13 +1125,13 @@ while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
 
 ```js
 while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
-            if(sameVnode(oldStartVNode, newStartVNode)){ 
+            if(sameVNode(oldStartVNode, newStartVNode)){ 
                 // 省略
-            }else if(sameVnode(oldEndVNode, newEndVNode)){
+            }else if(sameVNode(oldEndVNode, newEndVNode)){
                 // 省略
-            }else if(sameVnode(oldStartVNode, newEndVNode)){
+            }else if(sameVNode(oldStartVNode, newEndVNode)){
                 // 省略
-            }else if(sameVnode(oldEndVNode, newStartVNode)){
+            }else if(sameVNode(oldEndVNode, newStartVNode)){
                 // 省略
             }else {
                 // 遍历旧的一组子节点，试图寻找与 newStartVNode 拥有相同 key 值的节
@@ -1162,13 +1197,13 @@ while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
         oldStartVNode = oldCh[++oldStartIdx];
     }else if(!oldEndVNode){
         oldEndVNode = oldCh[--oldEndIdx];
-    }else if(sameVnode(oldStartVNode, newStartVNode)){
+    }else if(sameVNode(oldStartVNode, newStartVNode)){
         // 省略代码
-    }else if(sameVnode(oldEndVNode, newEndVNode)){
+    }else if(sameVNode(oldEndVNode, newEndVNode)){
         // 省略代码
-    }else if(sameVnode(oldStartVNode, newEndVNode)){
+    }else if(sameVNode(oldStartVNode, newEndVNode)){
         // 省略代码
-    }else if(sameVnode(oldEndVNode, newStartVNode)){
+    }else if(sameVNode(oldEndVNode, newStartVNode)){
         // 省略代码
     }else {
         // 省略代码
@@ -1213,13 +1248,13 @@ while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
                 // 代码省略
             }else if(!oldEndVNode){
                 // 代码省略
-            }else if(sameVnode(oldStartVNode, newStartVNode)){
+            }else if(sameVNode(oldStartVNode, newStartVNode)){
                 // 代码省略
-            }else if(sameVnode(oldEndVNode, newEndVNode)){
+            }else if(sameVNode(oldEndVNode, newEndVNode)){
                 // 代码省略
-            }else if(sameVnode(oldStartVNode, newEndVNode)){
+            }else if(sameVNode(oldStartVNode, newEndVNode)){
                 // 代码省略
-            }else if(sameVnode(oldEndVNode, newStartVNode)){
+            }else if(sameVNode(oldEndVNode, newStartVNode)){
                 // 代码省略
             }else {
                 // 代码省略
