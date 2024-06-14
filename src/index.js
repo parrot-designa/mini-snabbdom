@@ -1,7 +1,7 @@
 import {
   init,
   h
-} from "snabbdom";
+} from "../src/snabbdom";
  
 const patch = init([]);
 

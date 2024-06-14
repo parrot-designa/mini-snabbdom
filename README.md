@@ -571,6 +571,7 @@ function sameVNode(vnode1, vnode2){
 2. 第二步 ```parent = api.parentNode(elm);``` 获取旧节点对应的真实DOM的父节点。因为我们这里暴力插入新的节点，删除旧的节点，这里旧的节点实际上指的就是这个容器，而插入节点需要调用insertBefore，所以需要获取旧节点的父元素 方便后续调用。
 3. 第三步调用```createElm```函数创建挂载虚拟节点的真实DOM。
 4. 第四步调用```insertBefore```将创建的真实DOM插入到旧节点之后。
+5. 第五步调用```removeVnodes```移除旧节点。
 
 #### 3.3.2.1 createElm
 
@@ -609,6 +610,8 @@ function createElm(vnode){
 3. ```处理文本内容```: 检查vnode.text是否为原始类型（如字符串），并且无子节点或子节点数组为空，此时将文本通过api.createTextNode()转换为文本节点，并追加到刚创建的元素中。
 4. ```递归处理子节点```:如果children是一个数组，函数会遍历每个子节点，对每个子节点递归调用createElm()函数以生成其对应的DOM结构，然后将这些子DOM元素追加到父元素中，实现嵌套结构的构建。
 5. ```处理纯文本节点```:如果sel未定义，表明这是一个纯文本节点，直接使用api.createTextNode()创建文本节点，并将其赋值给vnode.elm。
+
+#### 3.3.2.2 removeVNodes移除旧节点
 
 ## 3.4 流程图
 

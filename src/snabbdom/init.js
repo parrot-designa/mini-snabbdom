@@ -255,6 +255,7 @@ export function init(){
             createElm(vnode);
 
             if(parent !== null){
+               
                 api.insertBefore(parent, vnode.elm, api.nextSibling(elm));
             }
         }
