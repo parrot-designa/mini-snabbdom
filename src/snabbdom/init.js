@@ -67,7 +67,12 @@ export function init(){
         let newEndVNode = newCh[newEndIdx]; 
 
         while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
-            if(sameVnode(oldStartVNode, newStartVNode)){
+            // 增加两个判断分支，如果头尾部节点为undefined，则说明该节点已经被处理过了，直接跳到下一个位置
+            if(!oldStartVNode){
+                oldStartVNode = oldCh[++oldStartIdx];
+            }else if(!oldEndVNode){
+                oldEndVNode = oldCh[--oldEndIdx];
+            }else if(sameVnode(oldStartVNode, newStartVNode)){
                 patchVnode(oldStartVNode, newStartVNode);
                 oldStartVNode = oldCh[++oldStartIdx];
                 newStartVNode = newCh[++newStartIdx];
@@ -109,8 +114,35 @@ export function init(){
                     oldCh[idxInOld] = undefined
                     // 最后更新 newStartIdx 到下一个位置
                     newStartVNode = newCh[++newStartIdx]
+                }else{
+                    // 将 newStartVNode 作为新节点挂载到头部，使用当前头部节点oldStartVNode.el 作为锚点
+                    api.insertBefore(
+                        parentElm,
+                        createElm(newStartVNode),
+                        oldStartVNode.elm
+                    )
                 }
+                newStartVNode = newCh[++newStartIdx]
             }
+        }
+
+        if(newStartIdx <= newEndIdx){ 
+            addVnodes(
+                parentElm,
+                oldStartVNode.elm,
+                newCh,
+                newStartIdx,
+                newEndIdx
+            )
+        }
+
+        if(oldStartIdx <= oldEndIdx){
+            removeVnodes(
+                parentElm,
+                oldCh,
+                oldStartIdx,
+                oldEndIdx
+            )
         }
     }
 
