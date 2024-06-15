@@ -73,15 +73,15 @@ export function init(){
             }else if(!oldEndVNode){
                 oldEndVNode = oldCh[--oldEndIdx];
             }else if(sameVNode(oldStartVNode, newStartVNode)){
-                patchVnode(oldStartVNode, newStartVNode);
+                patchVNode(oldStartVNode, newStartVNode);
                 oldStartVNode = oldCh[++oldStartIdx];
                 newStartVNode = newCh[++newStartIdx];
             }else if(sameVNode(oldEndVNode, newEndVNode)){
-                patchVnode(oldEndVNode, newEndVNode);
+                patchVNode(oldEndVNode, newEndVNode);
                 oldEndVNode = oldCh[--oldEndIdx];
                 newEndVNode = newCh[--newEndIdx];
             }else if(sameVNode(oldStartVNode, newEndVNode)){
-                patchVnode(oldStartVNode, newEndVNode);
+                patchVNode(oldStartVNode, newEndVNode);
                 api.insertBefore(
                     parentElm,
                     oldStartVNode.elm,
@@ -90,7 +90,7 @@ export function init(){
                 oldStartVNode = oldCh[++oldStartIdx];
                 newEndVNode = newCh[--newEndIdx];
             }else if(sameVNode(oldEndVNode, newStartVNode)){
-                patchVnode(oldEndVNode, newStartVNode);
+                patchVNode(oldEndVNode, newStartVNode);
                 api.insertBefore(parentElm, oldEndVNode.elm, api.nextSibling(oldStartVNode.elm));
                 oldEndVNode = oldCh[--oldEndIdx];
                 newStartVNode = newCh[++newStartIdx];
@@ -107,7 +107,7 @@ export function init(){
                     // idxInOld 位置对应的 vnode 就是需要移动的节点
                     const vnodeToMove = oldCh[idxInOld]
                     // 不要忘记除移动操作外还应该打补丁
-                    patchVnode(vnodeToMove, newStartVNode)
+                    patchVNode(vnodeToMove, newStartVNode)
                     // 将 vnodeToMove.el 移动到头部节点 oldStartVNode.el 之前，因此使用后者作为锚点
                     api.insertBefore(parentElm,vnodeToMove.elm,oldStartVNode.elm);
                     // 由于位置 idxInOld 处的节点所对应的真实 DOM 已经移动到了别处，因此将其设置为 undefined
@@ -145,7 +145,7 @@ export function init(){
             )
         }
     }
-
+ 
     function removeVnodes(
         parentElm,
         vnodes,
@@ -190,7 +190,7 @@ export function init(){
         return vnode.elm;
     }
 
-    function patchVnode(
+    function patchVNode(
         oldVNode,
         vnode
     ){
@@ -246,7 +246,7 @@ export function init(){
 
         if(sameVNode(oldVNode, vnode)){
             console.log("是同一个节点")
-            patchVnode(oldVNode, vnode);
+            patchVNode(oldVNode, vnode);
         }else{
             console.log("不是同一个节点，暴力插入新的，删除旧的",vnode);
             elm = oldVNode.elm;
@@ -255,8 +255,8 @@ export function init(){
             createElm(vnode);
 
             if(parent !== null){
-               
                 api.insertBefore(parent, vnode.elm, api.nextSibling(elm));
+                removeVnodes(parent,[oldVNode],0,0);
             }
         }
     }
